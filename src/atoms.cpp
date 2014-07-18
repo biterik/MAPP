@@ -10,6 +10,7 @@ using namespace MAPP_NS;
 Atoms::Atoms(MAPP* mapp,MPI_Comm communicator)
 :InitPtrs(mapp)
 {
+    comm_world=communicator;
     dimension=3;
     natms=0;
     natms_ph=0;
@@ -34,8 +35,8 @@ Atoms::Atoms(MAPP* mapp,MPI_Comm communicator)
     
     
     //communication related parameters
-    MPI_Comm_rank(world,&my_p_no);
-    MPI_Comm_size(world,&tot_p);
+    MPI_Comm_rank(comm_world,&my_p_no);
+    MPI_Comm_size(comm_world,&tot_p);
     ph_lst= new SwapLst<int>(mapp);
     
     snd_buff_0_capacity=0;
@@ -65,7 +66,7 @@ Atoms::Atoms(MAPP* mapp,MPI_Comm communicator)
     name_lenghts[my_p_no]=name_length;
     int* all_name_lenghts;
     CREATE1D(all_name_lenghts,tot_p);
-    MPI_Allreduce(name_lenghts,all_name_lenghts,tot_p, MPI_INT,MPI_SUM,world);
+    MPI_Allreduce(name_lenghts,all_name_lenghts,tot_p, MPI_INT,MPI_SUM,comm_world);
     delete [] name_lenghts;
     
     
@@ -84,7 +85,7 @@ Atoms::Atoms(MAPP* mapp,MPI_Comm communicator)
     
     
     for(int i=0;i<tot_p;i++)
-        MPI_Bcast(all_names[i],all_name_lenghts[i],MPI_CHAR,i,world);
+        MPI_Bcast(all_names[i],all_name_lenghts[i],MPI_CHAR,i,comm_world);
     
     
     int* node_no;
@@ -397,7 +398,7 @@ int* atm_list,int atm_list_size,class VecLst* list)
         MPI_Status status[2];
         MPI_Sendrecv(&snd_buff_size,1,
             MPI_INT,snd_proc,0,&rcv_buff_size,
-            1,MPI_INT,rcv_proc,0,world,
+            1,MPI_INT,rcv_proc,0,comm_world,
             &status[0]);
 
         
@@ -414,13 +415,13 @@ int* atm_list,int atm_list_size,class VecLst* list)
         if (rcv_buff_size)
         {
             MPI_Irecv(rcv_ph_buff,rcv_buff_size,
-                      MPI_BYTE,rcv_proc,0,world,
+                      MPI_BYTE,rcv_proc,0,comm_world,
                       &request[0]);
         }
         if (snd_buff_size)
         {
             MPI_Isend(snd_ph_buff,snd_buff_size,
-                      MPI_BYTE,snd_proc,0,world,
+                      MPI_BYTE,snd_proc,0,comm_world,
                       &request[1]);
         }
 
@@ -560,14 +561,14 @@ void Atoms::reset_comm(int idim,class VecLst* list)
     
     int max_snd_buff_0_size;
     MPI_Allreduce(&snd_buff_0_size,&max_snd_buff_0_size,1,
-                  MPI_INT,MPI_MAX,world);
+                  MPI_INT,MPI_MAX,comm_world);
     while(max_snd_buff_0_size)
     {
         int rcv_p=neigh_p[idim][1];
         int snd_p=neigh_p[idim][0];
         MPI_Sendrecv(&snd_buff_0_size,1,
                      MPI_INT,snd_p,0,&rcv_buff_size,
-                     1,MPI_INT,rcv_p,0,world,
+                     1,MPI_INT,rcv_p,0,comm_world,
                      &status);
         
         if(rcv_buff_capacity<rcv_buff_size)
@@ -579,11 +580,11 @@ void Atoms::reset_comm(int idim,class VecLst* list)
         }
         if(rcv_buff_size)
             MPI_Irecv(rcv_buff,rcv_buff_size,
-                      MPI_BYTE,rcv_p,0,world,
+                      MPI_BYTE,rcv_p,0,comm_world,
                       &request);
         if(snd_buff_0_size)
             MPI_Send(snd_buff_0,snd_buff_0_size,
-                     MPI_BYTE,snd_p,0,world);
+                     MPI_BYTE,snd_p,0,comm_world);
         
         snd_buff_0_size=0;
         if (rcv_buff_size)
@@ -611,19 +612,19 @@ void Atoms::reset_comm(int idim,class VecLst* list)
             }
         }
         MPI_Allreduce(&snd_buff_0_size,&max_snd_buff_0_size,1,
-                      MPI_INT,MPI_MAX,world);
+                      MPI_INT,MPI_MAX,comm_world);
     }
     
     int max_snd_buff_1_size;
     MPI_Allreduce(&snd_buff_1_size,&max_snd_buff_1_size,1,
-                  MPI_INT,MPI_MAX,world);
+                  MPI_INT,MPI_MAX,comm_world);
     while(max_snd_buff_1_size)
     {
         int rcv_p=neigh_p[idim][0];
         int snd_p=neigh_p[idim][1];
         MPI_Sendrecv(&snd_buff_1_size,1,
                      MPI_INT,snd_p,0,&rcv_buff_size,
-                     1,MPI_INT,rcv_p,0,world,
+                     1,MPI_INT,rcv_p,0,comm_world,
                      &status);
         
         if(rcv_buff_capacity<rcv_buff_size)
@@ -635,11 +636,11 @@ void Atoms::reset_comm(int idim,class VecLst* list)
         }
         if(rcv_buff_size)
             MPI_Irecv(rcv_buff,rcv_buff_size,
-                      MPI_BYTE,rcv_p,0,world,
+                      MPI_BYTE,rcv_p,0,comm_world,
                       &request);
         if(snd_buff_1_size)
             MPI_Send(snd_buff_1,snd_buff_1_size,
-                     MPI_BYTE,snd_p,0,world);
+                     MPI_BYTE,snd_p,0,comm_world);
         
         snd_buff_1_size=0;
         if (rcv_buff_size)
@@ -666,7 +667,7 @@ void Atoms::reset_comm(int idim,class VecLst* list)
             }
         }
         MPI_Allreduce(&snd_buff_1_size,&max_snd_buff_1_size,1,
-                      MPI_INT,MPI_MAX,world);
+                      MPI_INT,MPI_MAX,comm_world);
     }
 }
 /*--------------------------------------------
@@ -734,7 +735,7 @@ void Atoms::xchng_comm(int idim,class VecLst* list)
     snd_p=neigh_p[idim][0];
     MPI_Sendrecv(&snd_buff_0_size,1,
                  MPI_INT,snd_p,0,&rcv_buff_size,
-                 1,MPI_INT,rcv_p,0,world,
+                 1,MPI_INT,rcv_p,0,comm_world,
                  &status);
     if(rcv_buff_capacity<rcv_buff_size)
     {
@@ -746,12 +747,12 @@ void Atoms::xchng_comm(int idim,class VecLst* list)
     
     if(rcv_buff_size)
         MPI_Irecv(rcv_buff,rcv_buff_size,
-                  MPI_BYTE,rcv_p,0,world,
+                  MPI_BYTE,rcv_p,0,comm_world,
                   &request);
     
     if(snd_buff_0_size)
         MPI_Send(snd_buff_0,snd_buff_0_size,
-                 MPI_BYTE,snd_p,0,world);
+                 MPI_BYTE,snd_p,0,comm_world);
     snd_buff_0_size=0;
     if (rcv_buff_size)
     {
@@ -778,7 +779,7 @@ void Atoms::xchng_comm(int idim,class VecLst* list)
     snd_p=neigh_p[idim][1];
     MPI_Sendrecv(&snd_buff_1_size,1,
                  MPI_INT,snd_p,0,&rcv_buff_size,
-                 1,MPI_INT,rcv_p,0,world,
+                 1,MPI_INT,rcv_p,0,comm_world,
                  &status);
     if(rcv_buff_capacity<rcv_buff_size)
     {
@@ -789,11 +790,11 @@ void Atoms::xchng_comm(int idim,class VecLst* list)
     }
     if(rcv_buff_size)
         MPI_Irecv(rcv_buff,rcv_buff_size,
-                  MPI_BYTE,rcv_p,0,world,
+                  MPI_BYTE,rcv_p,0,comm_world,
                   &request);
     if(snd_buff_1_size)
         MPI_Send(snd_buff_1,snd_buff_1_size,
-                 MPI_BYTE,snd_p,0,world);
+                 MPI_BYTE,snd_p,0,comm_world);
     snd_buff_1_size=0;
     if (rcv_buff_size)
     {
@@ -853,18 +854,18 @@ void Atoms::update(class VecLst* list)
                         MPI_Status status[2];
                         
                         MPI_Sendrecv(&snd_buff_size,1,MPI_INT,snd_proc,0,&rcv_buff_size,
-                        1,MPI_INT,rcv_proc,0,world,&status[0]);
+                        1,MPI_INT,rcv_proc,0,comm_world,&status[0]);
                         
                         if (rcv_buff_size)
                         {
                             MPI_Irecv(vectors[list->ph_vec_list[0]].ret_vec(natms+natms_ph)
-                            ,rcv_buff_size,MPI_BYTE,rcv_proc,0,world,&request[0]);
+                            ,rcv_buff_size,MPI_BYTE,rcv_proc,0,comm_world,&request[0]);
                             
                         }
                         if (snd_buff_size)
                         {
                             MPI_Isend(snd_ph_buff,snd_buff_size,
-                            MPI_BYTE,snd_proc,0,world,&request[1]);
+                            MPI_BYTE,snd_proc,0,comm_world,&request[1]);
                         }
                         
                         int no_new_atms=rcv_buff_size/list->ph_byte_size;
@@ -973,7 +974,7 @@ void Atoms::update(class VecLst* list)
                         
                         MPI_Sendrecv(&snd_buff_size,1,
                         MPI_INT,snd_proc,0,&rcv_buff_size,
-                        1,MPI_INT,rcv_proc,0,world,&status[0]);
+                        1,MPI_INT,rcv_proc,0,comm_world,&status[0]);
                         
                         if(rcv_buff_size>rcv_ph_buff_capacity)
                         {
@@ -986,14 +987,14 @@ void Atoms::update(class VecLst* list)
                         if (rcv_buff_size)
                         {
                             MPI_Irecv(rcv_ph_buff,rcv_buff_size,
-                                      MPI_BYTE,rcv_proc,0,world,
+                                      MPI_BYTE,rcv_proc,0,comm_world,
                                       &request[0]);
                             
                         }
                         if (snd_buff_size)
                         {
                             MPI_Isend(snd_ph_buff,snd_buff_size,
-                                      MPI_BYTE,snd_proc,0,world,
+                                      MPI_BYTE,snd_proc,0,comm_world,
                                       &request[1]);
                         }
                         
@@ -1127,18 +1128,18 @@ void Atoms::update(int* vec_list,int no_vecs,int vec_byte_size)
                         MPI_Status status[2];
                         
                         MPI_Sendrecv(&snd_buff_size,1,MPI_INT,snd_proc,0,&rcv_buff_size,
-                                     1,MPI_INT,rcv_proc,0,world,&status[0]);
+                                     1,MPI_INT,rcv_proc,0,comm_world,&status[0]);
                         
                         if (rcv_buff_size)
                         {
                             MPI_Irecv(vectors[vec_list[0]].ret_vec(natms+natms_ph)
-                                      ,rcv_buff_size,MPI_BYTE,rcv_proc,0,world,&request[0]);
+                                      ,rcv_buff_size,MPI_BYTE,rcv_proc,0,comm_world,&request[0]);
                             
                         }
                         if (snd_buff_size)
                         {
                             MPI_Isend(snd_ph_buff,snd_buff_size,
-                                      MPI_BYTE,snd_proc,0,world,&request[1]);
+                                      MPI_BYTE,snd_proc,0,comm_world,&request[1]);
                         }
                         
                         int no_new_atms=rcv_buff_size/vec_byte_size;
@@ -1247,7 +1248,7 @@ void Atoms::update(int* vec_list,int no_vecs,int vec_byte_size)
                         
                         MPI_Sendrecv(&snd_buff_size,1,
                                      MPI_INT,snd_proc,0,&rcv_buff_size,
-                                     1,MPI_INT,rcv_proc,0,world,&status[0]);
+                                     1,MPI_INT,rcv_proc,0,comm_world,&status[0]);
                         
                         if(rcv_buff_size>rcv_ph_buff_capacity)
                         {
@@ -1260,14 +1261,14 @@ void Atoms::update(int* vec_list,int no_vecs,int vec_byte_size)
                         if (rcv_buff_size)
                         {
                             MPI_Irecv(rcv_ph_buff,rcv_buff_size,
-                                      MPI_BYTE,rcv_proc,0,world,
+                                      MPI_BYTE,rcv_proc,0,comm_world,
                                       &request[0]);
                             
                         }
                         if (snd_buff_size)
                         {
                             MPI_Isend(snd_ph_buff,snd_buff_size,
-                                      MPI_BYTE,snd_proc,0,world,
+                                      MPI_BYTE,snd_proc,0,comm_world,
                                       &request[1]);
                         }
                         
@@ -1637,8 +1638,7 @@ int Atoms::pack(char*& buff,int buff_pos,int& buff_capacity
  I fixed the growth; however, keep an eye on
  that.
  
- These whole changes might cause cause a shit
- storm.
+ These whole changes might cause a shit storm.
  --------------------------------------------*/
 int Atoms::unpack(char*& buff,int buff_pos
 ,int atm_list_size,class VecLst* list)
@@ -1662,10 +1662,8 @@ int Atoms::unpack(char*& buff,int buff_pos
     }
 
     /*
-     if(new_size>old_size)
-     grow(new_size-old_size);
-    */
-    /*
+    if(new_size>old_size)
+        grow(new_size-old_size);
     for(int i=0;i<list->no_vecs;i++)
     {
         for(int iatm=0;iatm<atm_list_size;iatm++)
@@ -1684,8 +1682,8 @@ int Atoms::unpack(char*& buff,int buff_pos
  atomic vectors inside VecLst (from phantom
  vectors).
  --------------------------------------------*/
-int Atoms::x_pack(char*& buff
-,class VecLst* list,int* atm_list,int atm_list_size)
+int Atoms::x_pack(char*& buff,class VecLst* list
+,int* atm_list,int atm_list_size)
 {
     int buff_pos=0;
     
@@ -1799,7 +1797,7 @@ void Atoms::update_0(int box_change,int neigh_chk
     
     int check_all;
     MPI_Allreduce(&check,&check_all,1,
-    MPI_INT,MPI_MAX,world);
+    MPI_INT,MPI_MAX,comm_world);
 
 
     if(check_all)
@@ -1871,6 +1869,29 @@ void Atoms::x2s(int no)
             
         }
                
+        icomp+=x_dim;
+    }
+}
+/*--------------------------------------------
+ transform x 2 s
+ --------------------------------------------*/
+void Atoms::x2s_no_correction(int no)
+{
+    //TYPE0* x=(TYPE0*)vectors[0].ret_vec();
+    TYPE0* x;
+    vectors[0].ret(x);
+    int x_dim=vectors[0].dim;
+    int icomp=0;
+    for(int i=0;i<no;i++)
+    {
+        for(int j=0;j<dimension;j++)
+        {
+            x[icomp+j]=x[icomp+j]*B[j][j];
+            for(int k=j+1;k<dimension;k++)
+                x[icomp+j]+=B[k][j]*x[icomp+k];
+            
+        }
+        
         icomp+=x_dim;
     }
 }
@@ -2110,7 +2131,7 @@ void Atoms::hard_auto_grid_proc(TYPE0 f)
     
     
     
-    int my_p_in_my_node;
+    int my_p_in_my_node=-1;
     for(int i=0;i<p_per_n[my_n_no];i++)
         if(n_p_grid[my_n_no][i]==my_p_no)
             my_p_in_my_node=i;
@@ -2214,7 +2235,7 @@ void Atoms::hard_auto_grid_proc(TYPE0 f)
     if(my_p_no==0)
         fprintf(output," %d",tot_p_grid[dimension-1]);
     if(my_p_no==0)
-        fprintf(output,"\n");
+        fprintf(output,"\n\n");
 }
 /*--------------------------------------------
  autogrid the domain
@@ -2230,7 +2251,7 @@ void Atoms::auto_grid_proc()
     TYPE0 vol;
     TYPE0* area;
     CREATE1D(area,dimension);
-    int prin_dimension;
+    int prin_dimension=0;
     
     if(eq_p_per_n)
     {
@@ -2325,7 +2346,7 @@ void Atoms::auto_grid_proc()
                 }
             }
             
-            int my_p_in_my_node;
+            int my_p_in_my_node=-1;
             for(int i=0;i<p_per_n[my_n_no];i++)
                 if(n_p_grid[my_n_no][i]==my_p_no)
                     my_p_in_my_node=i;
@@ -2414,7 +2435,7 @@ void Atoms::auto_grid_proc()
         {
             tot_p_grid[0]=tot_p;
             
-            int my_p_in_my_node;
+            int my_p_in_my_node=-1;
             for(int i=0;i<p_per_n[my_n_no];i++)
                 if(n_p_grid[my_n_no][i]==my_p_no)
                     my_p_in_my_node=i;
@@ -2491,7 +2512,7 @@ void Atoms::auto_grid_proc()
         MPI_Comm cartesian;
         for(int i=0;i<dimension;i++)
             list[i]=1;
-        MPI_Cart_create(world,dimension,tot_p_grid,list,1,&cartesian);
+        MPI_Cart_create(comm_world,dimension,tot_p_grid,list,1,&cartesian);
         MPI_Cart_get(cartesian,dimension,tot_p_grid,list,my_loc);
         for(int i=0;i<dimension;i++)
             MPI_Cart_shift(cartesian,i,1,&neigh_p[i][0],&neigh_p[i][1]);
@@ -2521,7 +2542,7 @@ void Atoms::auto_grid_proc()
     if(my_p_no==0)
         fprintf(output," %d",tot_p_grid[dimension-1]);
     if(my_p_no==0)
-        fprintf(output,"\n");
+        fprintf(output,"\n\n");
     
     
 }
@@ -2643,7 +2664,7 @@ void Atoms::comb_rec(int no,int tot,int pos
                 energy=energy/vols[ifac];
                 
                 TYPE0 energy_tot=0.0;
-                MPI_Allreduce(&energy,&energy_tot,1,MPI_TYPE0,MPI_SUM,world);
+                MPI_Allreduce(&energy,&energy_tot,1,MPI_TYPE0,MPI_SUM,comm_world);
                 
                 if(energy_tot<energy_all||energy_all<0.0)
                 {
@@ -2870,6 +2891,7 @@ void Atoms::add_skin(int narg,char** args)
         error->abort("skin cannot be equal or less than zero");
     skin=s;
 }
+
 /*----------------------------------------------------------------------------------------*/
 
 /*--------------------------------------------
@@ -3727,7 +3749,398 @@ void* AVec::ret_vec()
         return vec_12;
     
 }
+/*--------------------------------------------
+ 
+ --------------------------------------------*/
+void AVec::gather_dump()
+{
+    MPI_Comm comm_world=atms->comm_world;
+    int my_p_no=atms->my_p_no;
+    int tot_p=atms->tot_p;
+    int tot_natms=atms->tot_natms;
+    int natms=atms->natms;
+    int* rcv_size=NULL;
+    
+    if(my_p_no!=0)
+        MPI_Send(&natms,1,MPI_INT,0,my_p_no,comm_world);
+    
+    if(my_p_no==0)
+    {
+        create(rcv_size,tot_p);
+        MPI_Status status;
+        for(int iproc=1;iproc<tot_p;iproc++)
+            MPI_Recv(&rcv_size[iproc],1,MPI_INT,iproc,iproc,comm_world,&status);
+    }
+    
+    
 
+    if(type==0)
+    {
+        if(my_p_no==0)
+        {
+            create(vec_0_dump,dim*tot_natms);
+            memcpy(vec_0_dump,vec_0,natms*byte_size);
+        }
+        
+        if(my_p_no!=0)
+            MPI_Send(vec_0,natms*byte_size,MPI_BYTE,0,my_p_no,comm_world);
+        
+        if(my_p_no==0)
+        {
+            MPI_Status status;
+            int tot_atoms=natms;
+            for(int iproc=1;iproc<tot_p;iproc++)
+            {
+                MPI_Recv(&vec_0_dump[tot_atoms*dim],(byte_size*rcv_size[iproc]),MPI_BYTE,iproc,iproc,comm_world,&status);
+                tot_atoms+=rcv_size[iproc];
+            }
+        }
+    }
+    else if(type==1)
+    {
+        if(my_p_no==0)
+        {
+            create(vec_1_dump,dim*tot_natms);
+            memcpy(vec_1_dump,vec_1,natms*byte_size);
+        }
+        
+        if(my_p_no!=0)
+            MPI_Send(vec_1,natms*byte_size,MPI_BYTE,0,my_p_no,comm_world);
+        
+        if(my_p_no==0)
+        {
+            MPI_Status status;
+            int tot_atoms=natms;
+            for(int iproc=1;iproc<tot_p;iproc++)
+            {
+                MPI_Recv(&vec_1_dump[tot_atoms*dim],(byte_size*rcv_size[iproc]),MPI_BYTE,iproc,iproc,comm_world,&status);
+                tot_atoms+=rcv_size[iproc];
+            }
+        }
+    }
+    else if(type==2)
+    {
+        if(my_p_no==0)
+        {
+            create(vec_2_dump,dim*tot_natms);
+            memcpy(vec_2_dump,vec_2,natms*byte_size);
+        }
+        
+        if(my_p_no!=0)
+            MPI_Send(vec_2,natms*byte_size,MPI_BYTE,0,my_p_no,comm_world);
+        
+        if(my_p_no==0)
+        {
+            MPI_Status status;
+            int tot_atoms=natms;
+            for(int iproc=1;iproc<tot_p;iproc++)
+            {
+                MPI_Recv(&vec_2_dump[tot_atoms*dim],(byte_size*rcv_size[iproc]),MPI_BYTE,iproc,iproc,comm_world,&status);
+                tot_atoms+=rcv_size[iproc];
+            }
+        }
+    }
+    else if(type==3)
+    {
+        if(my_p_no==0)
+        {
+            create(vec_3_dump,dim*tot_natms);
+            memcpy(vec_3_dump,vec_3,natms*byte_size);
+        }
+        
+        if(my_p_no!=0)
+            MPI_Send(vec_3,natms*byte_size,MPI_BYTE,0,my_p_no,comm_world);
+        
+        if(my_p_no==0)
+        {
+            MPI_Status status;
+            int tot_atoms=natms;
+            for(int iproc=1;iproc<tot_p;iproc++)
+            {
+                MPI_Recv(&vec_3_dump[tot_atoms*dim],(byte_size*rcv_size[iproc]),MPI_BYTE,iproc,iproc,comm_world,&status);
+                tot_atoms+=rcv_size[iproc];
+            }
+        }
+    }
+    else if(type==4)
+    {
+        if(my_p_no==0)
+        {
+            create(vec_4_dump,dim*tot_natms);
+            memcpy(vec_4_dump,vec_4,natms*byte_size);
+        }
+        
+        if(my_p_no!=0)
+            MPI_Send(vec_4,natms*byte_size,MPI_BYTE,0,my_p_no,comm_world);
+        
+        if(my_p_no==0)
+        {
+            MPI_Status status;
+            int tot_atoms=natms;
+            for(int iproc=1;iproc<tot_p;iproc++)
+            {
+                MPI_Recv(&vec_4_dump[tot_atoms*dim],(byte_size*rcv_size[iproc]),MPI_BYTE,iproc,iproc,comm_world,&status);
+                tot_atoms+=rcv_size[iproc];
+            }
+        }
+    }
+    else if(type==5)
+    {
+        if(my_p_no==0)
+        {
+            create(vec_5_dump,dim*tot_natms);
+            memcpy(vec_5_dump,vec_5,natms*byte_size);
+        }
+        
+        if(my_p_no!=0)
+            MPI_Send(vec_5,natms*byte_size,MPI_BYTE,0,my_p_no,comm_world);
+        
+        if(my_p_no==0)
+        {
+            MPI_Status status;
+            int tot_atoms=natms;
+            for(int iproc=1;iproc<tot_p;iproc++)
+            {
+                MPI_Recv(&vec_5_dump[tot_atoms*dim],(byte_size*rcv_size[iproc]),MPI_BYTE,iproc,iproc,comm_world,&status);
+                tot_atoms+=rcv_size[iproc];
+            }
+        }
+    }
+    else if(type==6)
+    {
+        if(my_p_no==0)
+        {
+            create(vec_6_dump,dim*tot_natms);
+            memcpy(vec_6_dump,vec_6,natms*byte_size);
+        }
+        
+        if(my_p_no!=0)
+            MPI_Send(vec_6,natms*byte_size,MPI_BYTE,0,my_p_no,comm_world);
+        
+        if(my_p_no==0)
+        {
+            MPI_Status status;
+            int tot_atoms=natms;
+            for(int iproc=1;iproc<tot_p;iproc++)
+            {
+                MPI_Recv(&vec_6_dump[tot_atoms*dim],(byte_size*rcv_size[iproc]),MPI_BYTE,iproc,iproc,comm_world,&status);
+                tot_atoms+=rcv_size[iproc];
+            }
+        }
+    }
+    else if(type==7)
+    {
+        if(my_p_no==0)
+        {
+            create(vec_7_dump,dim*tot_natms);
+            memcpy(vec_7_dump,vec_7,natms*byte_size);
+        }
+        
+        if(my_p_no!=0)
+            MPI_Send(vec_7,natms*byte_size,MPI_BYTE,0,my_p_no,comm_world);
+        
+        if(my_p_no==0)
+        {
+            MPI_Status status;
+            int tot_atoms=natms;
+            for(int iproc=1;iproc<tot_p;iproc++)
+            {
+                MPI_Recv(&vec_7_dump[tot_atoms*dim],(byte_size*rcv_size[iproc]),MPI_BYTE,iproc,iproc,comm_world,&status);
+                tot_atoms+=rcv_size[iproc];
+            }
+        }
+    }
+    else if(type==8)
+    {
+        if(my_p_no==0)
+        {
+            create(vec_8_dump,dim*tot_natms);
+            memcpy(vec_8_dump,vec_8,natms*byte_size);
+        }
+        
+        if(my_p_no!=0)
+            MPI_Send(vec_8,natms*byte_size,MPI_BYTE,0,my_p_no,comm_world);
+        
+        if(my_p_no==0)
+        {
+            MPI_Status status;
+            int tot_atoms=natms;
+            for(int iproc=1;iproc<tot_p;iproc++)
+            {
+                MPI_Recv(&vec_8_dump[tot_atoms*dim],(byte_size*rcv_size[iproc]),MPI_BYTE,iproc,iproc,comm_world,&status);
+                tot_atoms+=rcv_size[iproc];
+            }
+        }
+    }
+    else if(type==9)
+    {
+        if(my_p_no==0)
+        {
+            create(vec_9_dump,dim*tot_natms);
+            memcpy(vec_9_dump,vec_9,natms*byte_size);
+        }
+        
+        if(my_p_no!=0)
+            MPI_Send(vec_9,natms*byte_size,MPI_BYTE,0,my_p_no,comm_world);
+        
+        if(my_p_no==0)
+        {
+            MPI_Status status;
+            int tot_atoms=natms;
+            for(int iproc=1;iproc<tot_p;iproc++)
+            {
+                MPI_Recv(&vec_9_dump[tot_atoms*dim],(byte_size*rcv_size[iproc]),MPI_BYTE,iproc,iproc,comm_world,&status);
+                tot_atoms+=rcv_size[iproc];
+            }
+        }
+    }
+    else if(type==10)
+    {
+        if(my_p_no==0)
+        {
+            create(vec_10_dump,dim*tot_natms);
+            memcpy(vec_10_dump,vec_10,natms*byte_size);
+        }
+        
+        if(my_p_no!=0)
+            MPI_Send(vec_10,natms*byte_size,MPI_BYTE,0,my_p_no,comm_world);
+        
+        if(my_p_no==0)
+        {
+            MPI_Status status;
+            int tot_atoms=natms;
+            for(int iproc=1;iproc<tot_p;iproc++)
+            {
+                MPI_Recv(&vec_10_dump[tot_atoms*dim],(byte_size*rcv_size[iproc]),MPI_BYTE,iproc,iproc,comm_world,&status);
+                tot_atoms+=rcv_size[iproc];
+            }
+        }
+    }
+    else if(type==11)
+    {
+        if(my_p_no==0)
+        {
+            create(vec_11_dump,dim*tot_natms);
+            memcpy(vec_11_dump,vec_11,natms*byte_size);
+        }
+        
+        if(my_p_no!=0)
+            MPI_Send(vec_11,natms*byte_size,MPI_BYTE,0,my_p_no,comm_world);
+        
+        if(my_p_no==0)
+        {
+            MPI_Status status;
+            int tot_atoms=natms;
+            for(int iproc=1;iproc<tot_p;iproc++)
+            {
+                MPI_Recv(&vec_11_dump[tot_atoms*dim],(byte_size*rcv_size[iproc]),MPI_BYTE,iproc,iproc,comm_world,&status);
+                tot_atoms+=rcv_size[iproc];
+            }
+        }
+    }
+    else if(type==12)
+    {
+        if(my_p_no==0)
+        {
+            create(vec_12_dump,dim*tot_natms);
+            memcpy(vec_12_dump,vec_12,natms*byte_size);
+        }
+        
+        if(my_p_no!=0)
+            MPI_Send(vec_12,natms*byte_size,MPI_BYTE,0,my_p_no,comm_world);
+        
+        if(my_p_no==0)
+        {
+            MPI_Status status;
+            int tot_atoms=natms;
+            for(int iproc=1;iproc<tot_p;iproc++)
+            {
+                MPI_Recv(&vec_12_dump[tot_atoms*dim],(byte_size*rcv_size[iproc]),MPI_BYTE,iproc,iproc,comm_world,&status);
+                tot_atoms+=rcv_size[iproc];
+            }
+        }
+    }
+    
+    if(my_p_no==0)
+    {
+        delete [] rcv_size;
+    }
+}
+/*--------------------------------------------
+ 
+ --------------------------------------------*/
+void AVec::print_dump(FILE* fp,int iatm)
+{
+    if(atms->my_p_no!=0)
+        return;
+    
+    int icmp=iatm*dim;
+    if(type==0)
+    {
+        for(int i=0;i<dim;i++)
+            fprintf(fp,"%c ",vec_0_dump[icmp+i]);
+    }
+    else if(type==1)
+    {
+        for(int i=0;i<dim;i++)
+            fprintf(fp,"%c ",vec_1_dump[icmp+i]);
+    }
+    else if(type==2)
+    {
+        for(int i=0;i<dim;i++)
+            fprintf(fp,"%d ",vec_2_dump[icmp+i]);
+    }
+    else if(type==3)
+    {
+        for(int i=0;i<dim;i++)
+            fprintf(fp,"%d ",vec_3_dump[icmp+i]);
+    }
+    else if(type==4)
+    {
+        for(int i=0;i<dim;i++)
+            fprintf(fp,"%d ",vec_4_dump[icmp+i]);
+    }
+    else if(type==5)
+    {
+        for(int i=0;i<dim;i++)
+            fprintf(fp,"%d ",vec_5_dump[icmp+i]);
+    }
+    else if(type==6)
+    {
+        for(int i=0;i<dim;i++)
+            fprintf(fp,"%ld ",vec_6_dump[icmp+i]);
+    }
+    else if(type==7)
+    {
+        for(int i=0;i<dim;i++)
+            fprintf(fp,"%ld ",vec_7_dump[icmp+i]);
+    }
+    else if(type==8)
+    {
+        for(int i=0;i<dim;i++)
+            fprintf(fp,"%lld ",vec_8_dump[icmp+i]);
+    }
+    else if(type==9)
+    {
+        for(int i=0;i<dim;i++)
+            fprintf(fp,"%lld ",vec_9_dump[icmp+i]);
+    }
+    else if(type==10)
+    {
+        for(int i=0;i<dim;i++)
+            fprintf(fp,"%f ",vec_10_dump[icmp+i]);
+    }
+    else if(type==11)
+    {
+        for(int i=0;i<dim;i++)
+            fprintf(fp,"%lf ",vec_11_dump[icmp+i]);
+    }
+    else if(type==12)
+    {
+        for(int i=0;i<dim;i++)
+            fprintf(fp,"%Lf ",vec_12_dump[icmp+i]);
+    }
+}
 /*--------------------------------------------
  
  --------------------------------------------*/
@@ -3741,7 +4154,6 @@ void AVec::ret(char*& x)
         MPI_Finalize();
         exit(EXIT_FAILURE);
     }
-    
 }
 void AVec::ret(unsigned char*& x)
 {
@@ -3876,3 +4288,212 @@ void AVec::ret(long double*& x)
         exit(EXIT_FAILURE);
     }
 }
+/*--------------------------------------------
+ 
+ --------------------------------------------*/
+void AVec::ret_dump(char*& x)
+{
+    if(atms->my_p_no!=0)
+        return;
+    if(type==0)
+        x=vec_0_dump;
+    else
+    {
+        printf("Error: incorrect type");
+        MPI_Finalize();
+        exit(EXIT_FAILURE);
+    }
+}
+void AVec::ret_dump(unsigned char*& x)
+{
+    if(atms->my_p_no!=0)
+        return;
+    if(type==1)
+        x=vec_1_dump;
+    else
+    {
+        printf("Error: incorrect type");
+        MPI_Finalize();
+        exit(EXIT_FAILURE);
+    }
+}
+void AVec::ret_dump(short int*& x)
+{
+    if(atms->my_p_no!=0)
+        return;
+    if(type==2)
+        x=vec_2_dump;
+    else
+    {
+        printf("Error: incorrect type");
+        MPI_Finalize();
+        exit(EXIT_FAILURE);
+    }
+}
+void AVec::ret_dump(unsigned short int*& x)
+{
+    if(atms->my_p_no!=0)
+        return;
+    if(type==3)
+        x=vec_3_dump;
+    else
+    {
+        printf("Error: incorrect type");
+        MPI_Finalize();
+        exit(EXIT_FAILURE);
+    }
+    
+}
+void AVec::ret_dump(int*& x)
+{
+    if(atms->my_p_no!=0)
+        return;
+    if(type==4)
+        x=vec_4_dump;
+    else
+    {
+        printf("Error: incorrect type");
+        MPI_Finalize();
+        exit(EXIT_FAILURE);
+    }
+}
+void AVec::ret_dump(unsigned int*& x)
+{
+    if(atms->my_p_no!=0)
+        return;
+    if(type==5)
+        x=vec_5_dump;
+    else
+    {
+        printf("Error: incorrect type");
+        MPI_Finalize();
+        exit(EXIT_FAILURE);
+    }
+}
+void AVec::ret_dump(long int*& x)
+{
+    if(atms->my_p_no!=0)
+        return;
+    if(type==6)
+        x=vec_6_dump;
+    else
+    {
+        printf("Error: incorrect type");
+        MPI_Finalize();
+        exit(EXIT_FAILURE);
+    }
+}
+void AVec::ret_dump(unsigned long int*& x)
+{
+    if(atms->my_p_no!=0)
+        return;
+    if(type==7)
+        x=vec_7_dump;
+    else
+    {
+        printf("Error: incorrect type");
+        MPI_Finalize();
+        exit(EXIT_FAILURE);
+    }
+}
+void AVec::ret_dump(long long int*& x)
+{
+    if(atms->my_p_no!=0)
+        return;
+    if(type==8)
+        x=vec_8_dump;
+    else
+    {
+        printf("Error: incorrect type");
+        MPI_Finalize();
+        exit(EXIT_FAILURE);
+    }
+}
+void AVec::ret_dump(unsigned long long int*& x)
+{
+    if(atms->my_p_no!=0)
+        return;
+    if(type==9)
+        x=vec_9_dump;
+    else
+    {
+        printf("Error: incorrect type");
+        MPI_Finalize();
+        exit(EXIT_FAILURE);
+    }
+}
+void AVec::ret_dump(float*& x)
+{
+    if(atms->my_p_no!=0)
+        return;
+    if(type==10)
+        x=vec_10_dump;
+    else
+    {
+        printf("Error: incorrect type");
+        MPI_Finalize();
+        exit(EXIT_FAILURE);
+    }
+}
+void AVec::ret_dump(double*& x)
+{
+    if(atms->my_p_no!=0)
+        return;
+    if(type==11)
+        x=vec_11_dump;
+    else
+    {
+        printf("Error: incorrect type");
+        MPI_Finalize();
+        exit(EXIT_FAILURE);
+    }
+}
+void AVec::ret_dump(long double*& x)
+{
+    if(atms->my_p_no!=0)
+        return;
+    if(type==12)
+        x=vec_12_dump;
+    else
+    {
+        printf("Error: incorrect type");
+        MPI_Finalize();
+        exit(EXIT_FAILURE);
+    }
+}
+/*--------------------------------------------
+ 
+ --------------------------------------------*/
+void AVec::del_dump()
+{
+    if(atms->my_p_no!=0)
+        return;
+    if(type==0)
+        delete [] vec_0_dump;
+    else if(type==1)
+        delete [] vec_1_dump;
+    else if(type==2)
+        delete [] vec_2_dump;
+    else if(type==3)
+        delete [] vec_3_dump;
+    else if(type==4)
+        delete [] vec_4_dump;
+    else if(type==5)
+        delete [] vec_5_dump;
+    else if(type==6)
+        delete [] vec_6_dump;
+    else if(type==7)
+        delete [] vec_7_dump;
+    else if(type==8)
+        delete [] vec_8_dump;
+    else if(type==9)
+        delete [] vec_9_dump;
+    else if(type==10)
+        delete [] vec_10_dump;
+    else if(type==11)
+        delete [] vec_11_dump;
+    else if(type==12)
+        delete [] vec_12_dump;
+    
+}
+

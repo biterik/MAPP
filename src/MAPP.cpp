@@ -5,10 +5,7 @@
 #include "MAPP.h"
 #include "memory.h"
 #include "error.h"
-#include "writeCFG.h"
-#include "vecmath.h"
 #include "atoms.h"
-#include "xmath.h"
 #include "neighbor.h"
 #include "atom_types.h"
 #include "min.h"
@@ -19,6 +16,8 @@
 #include "md_styles.h"
 #include "read.h"
 #include "read_styles.h"
+#include "write.h"
+#include "write_styles.h"
 #include <cmath>
 #include <stdio.h>
 #define MAPP_VERSION "2.0.0"
@@ -28,7 +27,7 @@ using namespace std;
  constructor of the main executer
  --------------------------------------------*/
 MAPP::
-MAPP(int narg,char** arg,MPI_Comm communicator)
+MAPP(int narg,char** args,MPI_Comm communicator)
 {
     step_no=0;
     step_tally=1000;
@@ -43,24 +42,59 @@ MAPP(int narg,char** arg,MPI_Comm communicator)
     
     //print the version
     if (atoms->my_p_no==0)
-        fprintf(output,"MAPP Version: %s\n",
+        fprintf(output,"MAPP Version: %s\n\n",
             (char*) MAPP_VERSION);
     
     
     forcefield=NULL;
     md=NULL;
     min=NULL;
+    write=NULL;
     
     atoms->add<TYPE0>(1, 3,"x");
     atoms->add<int>(1, 1,"type");
     
-    input_file=NULL;
-    //input_file=stdin;
     
-    input_file=fopen("input","r");
+    input_file=NULL;
+    input_file=stdin;
+    
+    int iarg=1;
+    
+    while(iarg<narg)
+    {
+        
+        if(strcmp(args[iarg],"-i")==0)
+        {
+            iarg++;
+            if(iarg==narg)
+                error->abort("no input file");
+            input_file=fopen(args[iarg],"r");
+            iarg++;
+        }
+        else if(strcmp(args[iarg],"-o")==0)
+        {
+            iarg++;
+            if(iarg==narg)
+                error->abort("no output file");
+            output=fopen(args[iarg],"w");
+            iarg++;
+        }
+        else
+            error->abort("unknown postfix: %s"
+            ,args[iarg]);
+    }
+    
+    if(input_file==NULL)
+        error->abort("input file not found");
+    
     read_file();
-    fclose(input_file);
-     
+    
+    if(input_file!=stdin)
+        fclose(input_file);
+    
+
+    
+    
 }
 /*--------------------------------------------
  destructor of the main executer
@@ -69,6 +103,12 @@ MAPP::~MAPP()
 {
     if (atoms->my_p_no==0)
         fprintf(output,"Finito\n");
+    
+    if(output!=stdout)
+        fclose(output);
+    
+    if(write!=NULL)
+        delete write;
 
     delete neighbor;
     delete atom_types;
@@ -83,17 +123,19 @@ MAPP::~MAPP()
 void MAPP::read_file()
 {
     /*
-     # example of input script
-     
-     read_cfg FeC.cfg
+     read cfg FeC.cfg
      skin 0.4
      ff FS
      ff_coef FS.ffield
      
-     md NTV temp 300.0 10.0 create_vel 586795
+     write cfg 5000 dump x
+     
+     md nh ntv temp 300.0 10.0 create_vel 586795
      boltzmann 8.6173324e-5
      time_step 0.1
      run 10000
+     
+     min l-bfgs max_iteration 10000 energy_tol 1.0e-7 m 5 H[0][0] H[1][1] H[2][2]
      
      */
 
@@ -145,6 +187,8 @@ void MAPP::command(char* command)
     }
     else if(strcmp(args[0],"reset")==0)
     {
+        if(narg!=1)
+            error->abort("unknown command: %s",command);
         step_no=0;
     }
 
@@ -159,6 +203,13 @@ void MAPP::command(char* command)
     else if(strcmp(args[0],"ff")==0) ff_style(narg,args);
     else if(strcmp(args[0],"min")==0) min_style(narg,args);
     else if(strcmp(args[0],"md")==0) md_style(narg,args);
+    else if(strcmp(args[0],"write")==0) write_style(narg,args);
+    else if(strcmp(args[0],"del_write")==0)
+    {
+        if(write!=NULL)
+            delete write;
+        write=NULL;
+    }
     else if(strcmp(args[0],"time_step")==0)
     {
         if(md==NULL)
@@ -179,7 +230,6 @@ void MAPP::command(char* command)
             error->abort("before run, ensemble should be initialized");
         md->run(narg,args);
     }
-    
     else
         error->abort("wrong command: %s",command);
     
@@ -296,6 +346,31 @@ void MAPP::read_style(int narg,char** args)
     
 }
 /*--------------------------------------------
+ differnt read styles
+ --------------------------------------------*/
+void MAPP::write_style(int narg,char** args)
+{
+    if(narg<2)
+        error->abort("wrong command: %s",args[0]);
+
+    if(write!=NULL)
+        delete write;
+
+    #define Write_Style
+    #define WriteStyle(class_name,style_name)\
+    else if(strcmp(args[1],#style_name)==0)  \
+    write= new class_name(this,narg,args);
+    
+    if(0){}
+    #include "write_styles.h"
+    else
+        error->abort("wrong style of write:"
+            " %s",args[1]);
+    #undef Write_Style
+
+    
+}
+/*--------------------------------------------
  parse a command line:
  chops up a 1d array line into 2d array of
  char, also returns the number of arguments
@@ -327,7 +402,8 @@ int MAPP::parse_line(char* line,char**& arg)
             if (narg==0 && line[cursor]=='#')
                 return 0;
             int i = 0;
-            while(!isspace(line[cursor])&& cursor < length)
+            while(!isspace(line[cursor])
+                  && cursor < length)
             {
                 cursor++;
                 i++;
@@ -354,7 +430,8 @@ int MAPP::parse_line(char* line,char**& arg)
         else
         {
             int i=0;
-            while(!isspace(line[cursor])&& cursor < strlen(line))
+            while(!isspace(line[cursor])
+                  && cursor < strlen(line))
                 arg[narg][i++]=line[cursor++];
             arg[narg][i] = '\0';
             narg++;
@@ -390,7 +467,8 @@ int MAPP::hash_remover(char* line,char*& newline)
         else
         {   if (narg!=0)
             newline[icursor++]=' ';
-            while(!isspace(line[cursor])&& cursor < strlen(line))
+            while(!isspace(line[cursor])
+                  && cursor < strlen(line))
                 newline[icursor++]=line[cursor++];
             narg++;
         }

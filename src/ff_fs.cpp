@@ -425,8 +425,7 @@ force_calc(int st_clc,TYPE0* en_st)
                     r=sqrt(rsq);
                     dr_rho=r-sqrt(cut_sq_rho[curs]);
                     rho[iatm]+=dr_rho*dr_rho*(mat_t_1[itype][jtype]
-                    +mat_t_2[itype][jtype]*dr_rho);
-                    
+                    +mat_t_2[itype][jtype]*dr_rho);                    
                     if(jatm<natms)
                         rho[jatm]+=dr_rho*dr_rho*(mat_t_1[jtype][itype]
                         +mat_t_2[jtype][itype]*dr_rho);

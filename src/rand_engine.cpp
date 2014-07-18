@@ -55,7 +55,7 @@ double Random::gaussian()
 {
     if(gauss_chk==0)
     {
-        double u,v,s,r;
+        double u=0.0,v=0.0,s,r;
         s=1.0;
         while(s>=1.0)
         {

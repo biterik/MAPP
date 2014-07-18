@@ -17,6 +17,7 @@
 #include "neighbor.h"
 #include "FF.h"
 #include "thermo_dynamics.h"
+#include "write.h"
 using namespace MAPP_NS;
 /*--------------------------------------------
  constructor
@@ -261,6 +262,8 @@ void Min_LBFGS::init()
         thermo->update(stress_idx,6,&energy_stress[1]);
         
     }
+    if(write!=NULL)
+        write->init();
     thermo->init();
     delete [] energy_stress;
 }
@@ -410,6 +413,8 @@ void Min_LBFGS::run()
 
             prev_energy=curr_energy;
             
+            if(write!=NULL)
+                write->write();
             thermo->thermo_print();
             
             err=line_search->line_min(curr_energy,alpha_m);
@@ -635,6 +640,8 @@ void Min_LBFGS::run()
             
             prev_energy=curr_energy;
             
+            if(write!=NULL)
+                write->write();
             thermo->thermo_print();
             
             err=line_search->line_min(curr_energy,alpha_m);
@@ -828,6 +835,9 @@ void Min_LBFGS::fin()
         if(m_it)
             delete [] H_s_y_list;
     }
+    
+    if(write!=NULL)
+        write->fin();
     thermo->fin();
     errors();
     atoms->x2s(atoms->natms);

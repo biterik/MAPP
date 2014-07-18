@@ -598,8 +598,8 @@ int SOLVEAXb::solve(double tol)
     int niter=A->h1+1;
     int comp;
     double g1_sq_l,g01_sq_l,hBh_l,hg_l,xBx_l,cx_l;
-    double g0_sq,g1_sq,g01_sq,hBh,hg,xBx,cx,coef;
-    double error,alpha;
+    double g0_sq=0.0,g1_sq,g01_sq,hBh,hg,xBx,cx,coef;
+    double error=0.0,alpha;
     
     for(int i=0;i<lsize;i++)
         h[i]=0.0;

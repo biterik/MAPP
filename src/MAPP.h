@@ -27,6 +27,7 @@ namespace MAPP_NS {
         class Neighbor* neighbor;
         class AtomTypes* atom_types;
         class ThermoDynamics* thermo;
+        class Write* write;
         FILE* output;
         
         FILE* input_file;
@@ -34,12 +35,14 @@ namespace MAPP_NS {
         class MD* md;
         class Min* min;
         
+        
         void read_file();
         void command(char*);
         void min_style(int,char**);
         void ff_style(int,char**);
         void md_style(int,char**);
         void read_style(int,char**);
+        void write_style(int,char**);
         int parse_line(char*,char**&);
         int hash_remover(char*,char*&);
         

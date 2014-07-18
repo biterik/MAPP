@@ -48,6 +48,27 @@ namespace MAPP_NS {
         double* vec_11;
         long double* vec_12;
         
+        char* vec_0_dump;
+        unsigned char* vec_1_dump;
+        
+        short int* vec_2_dump;
+        unsigned short int* vec_3_dump;
+        
+        int* vec_4_dump;
+        unsigned int* vec_5_dump;
+        
+        long int* vec_6_dump;
+        unsigned long int* vec_7_dump;
+        long long int* vec_8_dump;
+        unsigned long long int* vec_9_dump;
+        
+        float* vec_10_dump;
+        double* vec_11_dump;
+        long double* vec_12_dump;
+        
+        void gather_dump();
+        void print_dump(FILE*,int);
+        
         Atoms* atms;
         
         ~AVec();
@@ -70,9 +91,6 @@ namespace MAPP_NS {
         template <typename TYPE>
         TYPE* grow(TYPE*&,int,int);
         
-        
-        
-        
         void ret(char*&);
         void ret(unsigned char*&);
         
@@ -90,6 +108,26 @@ namespace MAPP_NS {
         void ret(float*&);
         void ret(double*&);
         void ret(long double*&);
+        
+        void ret_dump(char*&);
+        void ret_dump(unsigned char*&);
+        
+        void ret_dump(short int*&);
+        void ret_dump(unsigned short int*&);
+        
+        void ret_dump(int*&);
+        void ret_dump(unsigned int*&);
+        
+        void ret_dump(long int*&);
+        void ret_dump(unsigned long int*&);
+        void ret_dump(long long int*&);
+        void ret_dump(unsigned long long int*&);
+        
+        void ret_dump(float*&);
+        void ret_dump(double*&);
+        void ret_dump(long double*&);
+        
+        void del_dump();
     };
 /*--------------------------------------------
  collection of all atomic vectors
@@ -186,6 +224,7 @@ namespace MAPP_NS {
     {
     private:
     protected:
+        
         // snd and rcv buffers
         char* snd_buff_0;
         int snd_buff_0_capacity;
@@ -213,6 +252,7 @@ namespace MAPP_NS {
         SwapLst<int>* ph_lst;        
         
     public:
+        MPI_Comm comm_world;
         int dimension;
         int tot_natms;
         int natms;
@@ -292,6 +332,8 @@ namespace MAPP_NS {
         int unpack(char*&,int,int,class VecLst*);
         void x2s(int);
         void s2x(int);
+        void x2s_no_correction(int);
+        
         void x_unpack(char*&,class VecLst*,int);
         int x_pack(char*&,class VecLst*,int*,int);
 
@@ -395,6 +437,8 @@ namespace MAPP_NS {
     
             return (no_vecs-1);
         }
+        
+        void gather_all(VecLst*);
         /*
         template <typename TYPE>
         void ret(TYPE*& x,int ivec)

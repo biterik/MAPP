@@ -4,7 +4,6 @@
  --------------------------------------------*/
 #include <cmath>
 #include "md_nh.h"
-#include "writeCFG.h"
 #include "memory.h"
 #include "FF.h"
 #include "neighbor.h"
@@ -13,6 +12,7 @@
 #include "atoms.h"
 #include "atom_types.h"
 #include "thermo_dynamics.h"
+#include "write.h"
 #define TAU 1
 #define XYZ 2
 #define YZ 3
@@ -491,6 +491,8 @@ void MD_NH::init()
     
     
     thermo->init();
+    if(write!=NULL)
+        write->init();
 }
 /*--------------------------------------------
  finalize after the run is complete
@@ -498,6 +500,8 @@ void MD_NH::init()
 void MD_NH::fin()
 {
     thermo->fin();
+    if(write!=NULL)
+        write->fin();
     if(atoms->my_p_no==0)
         fprintf(output,"\n");
     
@@ -525,6 +529,10 @@ void MD_NH::run(int no_stps)
             update_x(dt);
             
             zero_f();
+            thermo->thermo_print();
+            if(write!=NULL)
+                write->write();
+            
             forcefield->force_calc(1,enst);
             
             if(thermo->test_prev_step()|| i==no_stps-1)
@@ -557,6 +565,8 @@ void MD_NH::run(int no_stps)
             update_x(dt);
             zero_f();
             thermo->thermo_print();
+            if(write!=NULL)
+                write->write();
             
             if(thermo->test_prev_step()|| i==no_stps-1)
             {
@@ -571,10 +581,7 @@ void MD_NH::run(int no_stps)
             {
                 forcefield->force_calc(0,&enst[0]);
             }
-            /*
-            if(i%ndump==0)
-                write_cfg->write_file(i);
-            */
+
             update_x_d(dt2);
             update_NH_T(dt2);
             step_no++;

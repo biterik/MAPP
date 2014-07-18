@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		270B59B31976F4CA00640B29 /* write.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 270B59B11976F4CA00640B29 /* write.cpp */; };
+		270B59B61976F6EA00640B29 /* write_cfg.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 270B59B41976F6EA00640B29 /* write_cfg.cpp */; };
 		277A87E11974822D00D57402 /* atom_types.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 277A87AF1974822D00D57402 /* atom_types.cpp */; };
 		277A87E21974822D00D57402 /* atoms.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 277A87B11974822D00D57402 /* atoms.cpp */; };
 		277A87E31974822D00D57402 /* error.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 277A87B31974822D00D57402 /* error.cpp */; };
@@ -28,8 +30,9 @@
 		277A87F31974822D00D57402 /* read_cfg.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 277A87D61974822D00D57402 /* read_cfg.cpp */; };
 		277A87F41974822D00D57402 /* thermo_dynamics.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 277A87D91974822D00D57402 /* thermo_dynamics.cpp */; };
 		277A87F51974822D00D57402 /* vecmath.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 277A87DB1974822D00D57402 /* vecmath.cpp */; };
-		277A87F61974822D00D57402 /* writeCFG.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 277A87DD1974822D00D57402 /* writeCFG.cpp */; };
 		277A87F71974822D00D57402 /* xmath.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 277A87DF1974822D00D57402 /* xmath.cpp */; };
+		277A87FA1974827D00D57402 /* libmpi_cxx.1.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 277A87F81974827D00D57402 /* libmpi_cxx.1.dylib */; };
+		277A87FB1974827D00D57402 /* libmpi.1.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 277A87F91974827D00D57402 /* libmpi.1.dylib */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -45,6 +48,10 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		270B59B11976F4CA00640B29 /* write.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = write.cpp; sourceTree = "<group>"; };
+		270B59B21976F4CA00640B29 /* write.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = write.h; sourceTree = "<group>"; };
+		270B59B41976F6EA00640B29 /* write_cfg.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = write_cfg.cpp; sourceTree = "<group>"; };
+		270B59B51976F6EA00640B29 /* write_cfg.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = write_cfg.h; sourceTree = "<group>"; };
 		277A87A2197481D700D57402 /* MAPP */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = MAPP; sourceTree = BUILT_PRODUCTS_DIR; };
 		277A87AF1974822D00D57402 /* atom_types.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = atom_types.cpp; sourceTree = "<group>"; };
 		277A87B01974822D00D57402 /* atom_types.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = atom_types.h; sourceTree = "<group>"; };
@@ -92,10 +99,11 @@
 		277A87DA1974822D00D57402 /* thermo_dynamics.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = thermo_dynamics.h; sourceTree = "<group>"; };
 		277A87DB1974822D00D57402 /* vecmath.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = vecmath.cpp; sourceTree = "<group>"; };
 		277A87DC1974822D00D57402 /* vecmath.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = vecmath.h; sourceTree = "<group>"; };
-		277A87DD1974822D00D57402 /* writeCFG.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = writeCFG.cpp; sourceTree = "<group>"; };
-		277A87DE1974822D00D57402 /* writeCFG.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = writeCFG.h; sourceTree = "<group>"; };
 		277A87DF1974822D00D57402 /* xmath.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = xmath.cpp; sourceTree = "<group>"; };
 		277A87E01974822D00D57402 /* xmath.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = xmath.h; sourceTree = "<group>"; };
+		277A87F81974827D00D57402 /* libmpi_cxx.1.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libmpi_cxx.1.dylib; path = lib/libmpi_cxx.1.dylib; sourceTree = "<group>"; };
+		277A87F91974827D00D57402 /* libmpi.1.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libmpi.1.dylib; path = lib/libmpi.1.dylib; sourceTree = "<group>"; };
+		27D0418B1978AD2C001E2957 /* write_styles.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = write_styles.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -103,6 +111,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				277A87FA1974827D00D57402 /* libmpi_cxx.1.dylib in Frameworks */,
+				277A87FB1974827D00D57402 /* libmpi.1.dylib in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -112,6 +122,8 @@
 		277A8799197481D700D57402 = {
 			isa = PBXGroup;
 			children = (
+				277A87F81974827D00D57402 /* libmpi_cxx.1.dylib */,
+				277A87F91974827D00D57402 /* libmpi.1.dylib */,
 				277A87AE1974822D00D57402 /* src */,
 				277A87A3197481D700D57402 /* Products */,
 			);
@@ -174,10 +186,13 @@
 				277A87DA1974822D00D57402 /* thermo_dynamics.h */,
 				277A87DB1974822D00D57402 /* vecmath.cpp */,
 				277A87DC1974822D00D57402 /* vecmath.h */,
-				277A87DD1974822D00D57402 /* writeCFG.cpp */,
-				277A87DE1974822D00D57402 /* writeCFG.h */,
 				277A87DF1974822D00D57402 /* xmath.cpp */,
 				277A87E01974822D00D57402 /* xmath.h */,
+				270B59B11976F4CA00640B29 /* write.cpp */,
+				270B59B21976F4CA00640B29 /* write.h */,
+				270B59B41976F6EA00640B29 /* write_cfg.cpp */,
+				270B59B51976F6EA00640B29 /* write_cfg.h */,
+				27D0418B1978AD2C001E2957 /* write_styles.h */,
 			);
 			path = src;
 			sourceTree = "<group>";
@@ -241,7 +256,9 @@
 				277A87E21974822D00D57402 /* atoms.cpp in Sources */,
 				277A87E11974822D00D57402 /* atom_types.cpp in Sources */,
 				277A87E31974822D00D57402 /* error.cpp in Sources */,
+				270B59B61976F6EA00640B29 /* write_cfg.cpp in Sources */,
 				277A87F11974822D00D57402 /* rand_engine.cpp in Sources */,
+				270B59B31976F4CA00640B29 /* write.cpp in Sources */,
 				277A87E71974822D00D57402 /* line_search.cpp in Sources */,
 				277A87F31974822D00D57402 /* read_cfg.cpp in Sources */,
 				277A87E61974822D00D57402 /* ff_lj.cpp in Sources */,
@@ -251,7 +268,6 @@
 				277A87F01974822D00D57402 /* neighbor.cpp in Sources */,
 				277A87E81974822D00D57402 /* main.cpp in Sources */,
 				277A87E51974822D00D57402 /* ff_fs.cpp in Sources */,
-				277A87F61974822D00D57402 /* writeCFG.cpp in Sources */,
 				277A87F51974822D00D57402 /* vecmath.cpp in Sources */,
 				277A87EF1974822D00D57402 /* min_l-bfgs.cpp in Sources */,
 				277A87ED1974822D00D57402 /* min.cpp in Sources */,
@@ -335,6 +351,16 @@
 		277A87AC197481D800D57402 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				HEADER_SEARCH_PATHS = (
+					"$(inherited)",
+					/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include,
+					"$(inherited)",
+					"$(PROJECT_DIR)/include",
+				);
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/lib",
+				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Debug;
@@ -342,6 +368,16 @@
 		277A87AD197481D800D57402 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				HEADER_SEARCH_PATHS = (
+					"$(inherited)",
+					/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include,
+					"$(inherited)",
+					"$(PROJECT_DIR)/include",
+				);
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/lib",
+				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Release;

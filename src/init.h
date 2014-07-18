@@ -18,13 +18,13 @@ namespace MAPP_NS{
         mapp(ptr),
         memory(ptr->memory),
         error(ptr->error),
-        //read_data(ptr->read_data),
         forcefield(ptr->forcefield),
         world(ptr->world),
         atoms(ptr->atoms),
         neighbor(ptr->neighbor),
         atom_types(ptr->atom_types),
         output(ptr->output),
+        write(ptr->write),
         step_no(ptr->step_no),
         step_tally(ptr->step_tally)
         {}
@@ -33,13 +33,13 @@ namespace MAPP_NS{
         MAPP* mapp;
         Memory*& memory;
         Error*& error;
-        //ReadData*& read_data;
         ForceField*& forcefield;
         MPI_Comm &world;
         Neighbor*& neighbor;
         Atoms*& atoms;
         AtomTypes*& atom_types;
         FILE*& output;
+        Write*& write;
         int& step_no;
         int& step_tally;
     };
