@@ -1,3 +1,4 @@
+#include <stdlib.h>
 #include "atom_types.h"
 #include "write_cfg.h"
 #include "error.h"

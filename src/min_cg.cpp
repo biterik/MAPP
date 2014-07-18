@@ -7,7 +7,7 @@
 //
 #include "min_cg.h"
 #include "neighbor.h"
-#include "FF.h"
+#include "ff.h"
 #include "thermo_dynamics.h"
 #include "write.h"
 using namespace MAPP_NS;

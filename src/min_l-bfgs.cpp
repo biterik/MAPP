@@ -15,7 +15,7 @@
  --------------------------------------------*/
 #include "min_l-bfgs.h"
 #include "neighbor.h"
-#include "FF.h"
+#include "ff.h"
 #include "thermo_dynamics.h"
 #include "write.h"
 using namespace MAPP_NS;

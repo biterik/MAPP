@@ -3,7 +3,7 @@
  Copyright (c) 2013 MIT. All rights reserved.
  --------------------------------------------*/
 #include "neighbor.h"
-#include "FF.h"
+#include "ff.h"
 using namespace std;
 using namespace MAPP_NS;
 /*--------------------------------------------

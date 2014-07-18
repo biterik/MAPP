@@ -3,9 +3,10 @@
  Copyright (c) 2013 MIT. All rights reserved.
  --------------------------------------------*/
 #include <cmath>
+#include <stdlib.h>
 #include "md_nh.h"
 #include "memory.h"
-#include "FF.h"
+#include "ff.h"
 #include "neighbor.h"
 #include "error.h"
 #include "rand_engine.h"

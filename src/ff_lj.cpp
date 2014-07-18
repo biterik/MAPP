@@ -3,7 +3,7 @@
  Copyright (c) 2013 MIT. All rights reserved.
  --------------------------------------------*/
 #include <cmath>
-#include "FF_lj.h"
+#include "ff_lj.h"
 #include "memory.h"
 #include "neighbor.h"
 #include "atom_types.h"

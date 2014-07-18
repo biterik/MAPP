@@ -18,6 +18,7 @@
 #include "read_styles.h"
 #include "write.h"
 #include "write_styles.h"
+#include "command_styles.h"
 #include <cmath>
 #include <stdio.h>
 #define MAPP_VERSION "2.0.0"
@@ -231,7 +232,7 @@ void MAPP::command(char* command)
         md->run(narg,args);
     }
     else
-        error->abort("wrong command: %s",command);
+        command_style(narg,args);
     
     
     for(int i=0;i<narg;i++)
@@ -368,6 +369,31 @@ void MAPP::write_style(int narg,char** args)
             " %s",args[1]);
     #undef Write_Style
 
+    
+}
+/*--------------------------------------------
+ differnt command styles
+ --------------------------------------------*/
+void MAPP::command_style(int narg,char** args)
+{
+    if(narg<2)
+        error->abort("wrong command: %s",args[0]);
+    
+    
+    #define Command_Style
+    #define CommandStyle(class_name,style_name) \
+    else if(strcmp(args[0],#style_name)==0){    \
+    class class_name* command =                 \
+    new class_name(this,narg,args);             \
+    delete command;}
+    
+    if(0){}
+    #include "command_styles.h"
+    else
+        error->abort("unknown command:"
+                     " %s",args[0]);
+    #undef Command_Style
+    
     
 }
 /*--------------------------------------------

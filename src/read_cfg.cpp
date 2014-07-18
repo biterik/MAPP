@@ -3,7 +3,8 @@
  Copyright (c) 2013 MIT. All rights reserved.
  --------------------------------------------*/
 #include <cmath>
-#include "read_CFG.h"
+#include <stdlib.h>
+#include "read_cfg.h"
 #include "error.h"
 #include "memory.h"
 #include "atom_types.h"

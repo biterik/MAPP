@@ -3,7 +3,7 @@
  Copyright (c) 2013 MIT. All rights reserved.
  --------------------------------------------*/
 #include <cmath>
-#include "FF_fs.h"
+#include "ff_fs.h"
 #include "memory.h"
 #include "neighbor.h"
 #include "atoms.h"

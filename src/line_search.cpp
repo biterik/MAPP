@@ -1,7 +1,7 @@
 
 
 #include "line_search.h"
-#include "FF.h"
+#include "ff.h"
 using namespace std;
 using namespace MAPP_NS;
 /*--------------------------------------------
