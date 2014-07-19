@@ -41,18 +41,26 @@ CommandChangeBox::CommandChangeBox(MAPP* mapp
             iarg++;
             
         }
+        else
+            error->abort("wrong command %s",args[iarg]);
     }
     
-    TYPE0** H=atoms->H;
     
     for(int i=0;i<dim;i++)
         for(int j=0;j<dim;j++)
-            H[i][j]*=A[i][j];
+            atoms->H[i][j]*=A[i][j];
     
     for(int i=0;i<dim;i++)
         delete [] A[i];
     if(dim)
         delete [] A;
+    
+    if(dim==3)
+        M3INV_TRI_LOWER(atoms->H,atoms->B);
+    else
+        atoms->invert_lower_triangle(atoms->H,atoms->B,dim);
+    
+
 }
 /*--------------------------------------------
  destructor
