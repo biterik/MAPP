@@ -309,8 +309,8 @@ void MAPP::md_style(int narg,char** args)
         delete md;
     }
     #define MD_Style
-    #define MDStyle(class_name,style_name)  \
-    else if(strcmp(args[1],#style_name)==0) \
+    #define MDStyle(class_name,style_name)      \
+    else if(strcmp(args[1],#style_name)==0)     \
     md= new class_name(this,narg,args);
 
     if(0){}
@@ -334,8 +334,8 @@ void MAPP::read_style(int narg,char** args)
     
     Read* read;
     #define Read_Style
-    #define ReadStyle(class_name,style_name) \
-    else if(strcmp(args[1],#style_name)==0)  \
+    #define ReadStyle(class_name,style_name)    \
+    else if(strcmp(args[1],#style_name)==0)     \
     read= new class_name(this,narg,args);
     
     if(0){}
@@ -358,8 +358,8 @@ void MAPP::write_style(int narg,char** args)
         delete write;
 
     #define Write_Style
-    #define WriteStyle(class_name,style_name)\
-    else if(strcmp(args[1],#style_name)==0)  \
+    #define WriteStyle(class_name,style_name)   \
+    else if(strcmp(args[1],#style_name)==0)     \
     write= new class_name(this,narg,args);
     
     if(0){}

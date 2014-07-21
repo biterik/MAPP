@@ -399,12 +399,10 @@ force_calc(int st_clc,TYPE0* en_st)
     
 
     int natms=atoms->natms;
-    
-    for(int i=0;i<natms;i++)
-        rho[i]=0.0;
 
     for(iatm=0;iatm<natms;iatm++)
     {
+        rho[iatm]=0.0;
         itype=type[iatm];
         icomp=3*iatm;
         for(int j=0;j<neighbor_list_size[iatm];j++)
