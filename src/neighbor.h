@@ -47,6 +47,7 @@ namespace MAPP_NS {
         int** neighbor_list;
         int* neighbor_list_size;
         int neighbor_list_size_size;
+        int no_pairs;
         
         Neighbor(MAPP *);
         ~Neighbor();

@@ -222,7 +222,7 @@ void Neighbor::create_list(int box_change,int s_or_x)
     return;
     
     */
-  
+    no_pairs=0;
     if(pair_wise)
     {
         for(iatm=0;iatm<atoms->natms;iatm++)
@@ -265,6 +265,7 @@ void Neighbor::create_list(int box_change,int s_or_x)
             {
                 CREATE1D(neighbor_list[iatm],neighbor_list_size[iatm]);
                 memcpy(neighbor_list[iatm],tmp_neigh_list,neighbor_list_size[iatm]*sizeof(int));
+                no_pairs+=neighbor_list_size[iatm];
             }
         }
     }
@@ -300,6 +301,8 @@ void Neighbor::create_list(int box_change,int s_or_x)
                             }
                             tmp_neigh_list[neighbor_list_size[iatm]]=jatm;
                             neighbor_list_size[iatm]++;
+                            
+                            if(jatm>iatm) no_pairs++;
                         }
                     }
                     

@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		270B59B31976F4CA00640B29 /* write.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 270B59B11976F4CA00640B29 /* write.cpp */; };
 		270B59B61976F6EA00640B29 /* write_cfg.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 270B59B41976F6EA00640B29 /* write_cfg.cpp */; };
+		271278C4198001A700C83264 /* ff_meam.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 271278C2198001A700C83264 /* ff_meam.cpp */; };
 		2725B52E1979A98900F5183C /* command_change_box.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2725B52C1979A98900F5183C /* command_change_box.cpp */; };
 		277A87E11974822D00D57402 /* atom_types.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 277A87AF1974822D00D57402 /* atom_types.cpp */; };
 		277A87E21974822D00D57402 /* atoms.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 277A87B11974822D00D57402 /* atoms.cpp */; };
@@ -53,6 +54,8 @@
 		270B59B21976F4CA00640B29 /* write.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = write.h; sourceTree = "<group>"; };
 		270B59B41976F6EA00640B29 /* write_cfg.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = write_cfg.cpp; sourceTree = "<group>"; };
 		270B59B51976F6EA00640B29 /* write_cfg.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = write_cfg.h; sourceTree = "<group>"; };
+		271278C2198001A700C83264 /* ff_meam.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ff_meam.cpp; sourceTree = "<group>"; };
+		271278C3198001A700C83264 /* ff_meam.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ff_meam.h; sourceTree = "<group>"; };
 		2725B52B1979A95E00F5183C /* command_styles.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = command_styles.h; sourceTree = "<group>"; };
 		2725B52C1979A98900F5183C /* command_change_box.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = command_change_box.cpp; sourceTree = "<group>"; };
 		2725B52D1979A98900F5183C /* command_change_box.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = command_change_box.h; sourceTree = "<group>"; };
@@ -156,6 +159,8 @@
 				277A87B81974822D00D57402 /* ff_fs.h */,
 				277A87B91974822D00D57402 /* ff_lj.cpp */,
 				277A87BA1974822D00D57402 /* ff_lj.h */,
+				271278C2198001A700C83264 /* ff_meam.cpp */,
+				271278C3198001A700C83264 /* ff_meam.h */,
 				277A87BB1974822D00D57402 /* ff_styles.h */,
 				277A87BC1974822D00D57402 /* init.h */,
 				277A87BD1974822D00D57402 /* line_search.cpp */,
@@ -280,6 +285,7 @@
 				277A87EF1974822D00D57402 /* min_l-bfgs.cpp in Sources */,
 				277A87ED1974822D00D57402 /* min.cpp in Sources */,
 				277A87F71974822D00D57402 /* xmath.cpp in Sources */,
+				271278C4198001A700C83264 /* ff_meam.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
