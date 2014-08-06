@@ -35,6 +35,7 @@
 		277A87F71974822D00D57402 /* xmath.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 277A87DF1974822D00D57402 /* xmath.cpp */; };
 		277A87FA1974827D00D57402 /* libmpi_cxx.1.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 277A87F81974827D00D57402 /* libmpi_cxx.1.dylib */; };
 		277A87FB1974827D00D57402 /* libmpi.1.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 277A87F91974827D00D57402 /* libmpi.1.dylib */; };
+		2795CCE3199170DD00CDDF49 /* ff_eam.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2795CCE1199170DD00CDDF49 /* ff_eam.cpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -110,6 +111,8 @@
 		277A87E01974822D00D57402 /* xmath.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = xmath.h; sourceTree = "<group>"; };
 		277A87F81974827D00D57402 /* libmpi_cxx.1.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libmpi_cxx.1.dylib; path = lib/libmpi_cxx.1.dylib; sourceTree = "<group>"; };
 		277A87F91974827D00D57402 /* libmpi.1.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libmpi.1.dylib; path = lib/libmpi.1.dylib; sourceTree = "<group>"; };
+		2795CCE1199170DD00CDDF49 /* ff_eam.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ff_eam.cpp; sourceTree = "<group>"; };
+		2795CCE2199170DD00CDDF49 /* ff_eam.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ff_eam.h; sourceTree = "<group>"; };
 		27D0418B1978AD2C001E2957 /* write_styles.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = write_styles.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -161,6 +164,8 @@
 				277A87BA1974822D00D57402 /* ff_lj.h */,
 				271278C2198001A700C83264 /* ff_meam.cpp */,
 				271278C3198001A700C83264 /* ff_meam.h */,
+				2795CCE1199170DD00CDDF49 /* ff_eam.cpp */,
+				2795CCE2199170DD00CDDF49 /* ff_eam.h */,
 				277A87BB1974822D00D57402 /* ff_styles.h */,
 				277A87BC1974822D00D57402 /* init.h */,
 				277A87BD1974822D00D57402 /* line_search.cpp */,
@@ -273,6 +278,7 @@
 				270B59B31976F4CA00640B29 /* write.cpp in Sources */,
 				277A87E71974822D00D57402 /* line_search.cpp in Sources */,
 				2725B52E1979A98900F5183C /* command_change_box.cpp in Sources */,
+				2795CCE3199170DD00CDDF49 /* ff_eam.cpp in Sources */,
 				277A87F31974822D00D57402 /* read_cfg.cpp in Sources */,
 				277A87E61974822D00D57402 /* ff_lj.cpp in Sources */,
 				277A87EC1974822D00D57402 /* memory.cpp in Sources */,

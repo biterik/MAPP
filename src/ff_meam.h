@@ -13,6 +13,26 @@ namespace MAPP_NS
     class ForceField_meam : public ForceField
     {
     private:
+        
+        TYPE0* delij;
+        TYPE0* delik;
+        TYPE0* deljk;
+        TYPE0* s;
+        TYPE0* si;
+        TYPE0* sj;
+        TYPE0* drho1drm1;
+        TYPE0* drho1drm2;
+        TYPE0* drho2drm1;
+        TYPE0* drho2drm2;
+        TYPE0* drho3drm1;
+        TYPE0* drho3drm2;
+        TYPE0* drhodrm1;
+        TYPE0* drhodrm2;
+        TYPE0* dUdrijm;
+        TYPE0* fi;
+        TYPE0* fj;
+        TYPE0* v;
+        
     protected:
         /*---------------------------------*/
         int rho_dim;
@@ -145,14 +165,13 @@ namespace MAPP_NS
         
         
         /*---------------------------------*/
+        int max_pairs;
         TYPE0* scrfcn;//not set yet
         TYPE0* dscrfcn;//not set yet
         TYPE0* fcpair;//not set yet
         /*---------------------------------*/
-        
-        
-        void screen();
-        void ff();
+                
+
         void reset();
 
         void fcut(TYPE0,TYPE0&);
@@ -176,6 +195,9 @@ namespace MAPP_NS
         void compute_pair_meam();
         void compute_phi(TYPE0,int,int,TYPE0&);
         void compute_phi_dphi(TYPE0,int,int,TYPE0&,TYPE0&);
+        
+        TYPE0* nrgy_strss;
+        TYPE0 third,sixth;
         
     public:
         ForceField_meam(MAPP *);
