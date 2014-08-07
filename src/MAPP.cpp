@@ -93,8 +93,9 @@ MAPP(int narg,char** args,MPI_Comm communicator)
     if(input_file!=stdin)
         fclose(input_file);
     
-
     
+    
+    //test();
     
 }
 /*--------------------------------------------
@@ -116,7 +117,6 @@ MAPP::~MAPP()
     delete atoms;
     delete error;
     delete memory;
-  
 }
 /*--------------------------------------------
  test field
@@ -502,3 +502,10 @@ int MAPP::hash_remover(char* line,char*& newline)
     newline[icursor]='\0';
     return narg;
 }
+/*--------------------------------------------
+ test
+ --------------------------------------------*/
+void MAPP::test()
+{
+}
+

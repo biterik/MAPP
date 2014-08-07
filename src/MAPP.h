@@ -47,6 +47,7 @@ namespace MAPP_NS {
         int parse_line(char*,char**&);
         int hash_remover(char*,char*&);
         
+        void test();
     };
 
 }

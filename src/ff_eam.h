@@ -14,6 +14,22 @@ namespace MAPP_NS
     {
     private:
     protected:
+        TYPE0*** F_arr;
+        TYPE0*** phi_r_arr;
+        TYPE0*** rho_arr;
+        
+        void set_setfl(int,char**);
+        void set_funcfl(int,char**);
+        int line_read(FILE*,char*&);
+        
+        int eam_mode;
+        int nr,nrho;
+        TYPE0 dr,drho;
+        
+        void allocate();
+        int allocated;
+        void clean_up();
+        
     public:
         ForceField_eam(MAPP *);
         ~ForceField_eam();
@@ -24,31 +40,7 @@ namespace MAPP_NS
         void coef(int,char**);
     };
     
-    class fl
-    {
-    private:
-    protected:
-        int nr;
-        TYPE0 dr;
-        int nrho;
-        TYPE0 drho;
-        int no_types;
-    public:
-        fl(int,TYPE0,int,TYPE0,int);
-        void compute_phi(TYPE0,int,int,TYPE0&);
-        void compute_phi_dphi(TYPE0,int,int,TYPE0&,TYPE0&);
-        void compute_rho(TYPE0,int,int,TYPE0&);
-        void compute_rho_drho(TYPE0,int,int,TYPE0&,TYPE0&);
-    };
-    
-    class func_fl:public fl
-    {
-        func_fl(int,TYPE0,int,TYPE0,int);
-    };
-    class set_fl:public fl
-    {
-        set_fl(int,TYPE0,int,TYPE0,int);
-    };
+
     
 }
 #endif
