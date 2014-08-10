@@ -20,15 +20,27 @@ namespace MAPP_NS
         
         void set_setfl(int,char**);
         void set_funcfl(int,char**);
+        void set_fs(int,char**);
         int line_read(FILE*,char*&);
         
         int eam_mode;
         int nr,nrho;
-        TYPE0 dr,drho;
+        TYPE0 dr,drho,dr_inv,drho_inv;
         
         void allocate();
         int allocated;
         void clean_up();
+        
+        void set_arrays();
+        void interpolate(int,TYPE0,TYPE0**);
+        
+        
+        int** type2rho;
+        int** type2phi;
+        
+        int rho_n,f_n,type_n,x_n,dF_n;
+        TYPE0* nrgy_strss;
+        TYPE0 cut_sq;
         
     public:
         ForceField_eam(MAPP *);

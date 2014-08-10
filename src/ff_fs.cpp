@@ -399,10 +399,11 @@ force_calc(int st_clc,TYPE0* en_st)
     
 
     int natms=atoms->natms;
-
+    
+    for(iatm=0;iatm<natms;iatm++) rho[iatm]=0.0;
+    
     for(iatm=0;iatm<natms;iatm++)
     {
-        rho[iatm]=0.0;
         itype=type[iatm];
         icomp=3*iatm;
         for(int j=0;j<neighbor_list_size[iatm];j++)
@@ -602,7 +603,6 @@ TYPE0 ForceField_fs::energy_calc()
     
     TYPE0 en=0.0;
     TYPE0 en_tot=0.0;
-    
     for(iatm=0;iatm<natms;iatm++)
     {
         itype=type[iatm];
