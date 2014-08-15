@@ -4496,4 +4496,168 @@ void AVec::del_dump()
         delete [] vec_12_dump;
     
 }
+/*--------------------------------------------
+
+ --------------------------------------------*/
+void AVec::change_dimension(int d)
+{
+    
+    
+    if(d==dim)
+        return;
+    
+    int d_min=MIN(d,dim);
+    
+    int tot;
+    if(ph==0)
+        tot=atms->natms;
+    else
+        tot=atms->natms+atms->natms_ph;
+    
+    if(type==0)
+    {
+        char* tmp_vec_0;
+        create(tmp_vec_0,d*tot);
+        for(int i=0;i<tot;i++)
+            for(int j=0;j<d_min;j++)
+                tmp_vec_0[i*d+j]=vec_0[i*dim+j];
+        
+        delete [] vec_0;
+        vec_0=tmp_vec_0;
+    }
+    else if(type==1)
+    {
+        unsigned char* tmp_vec_1;
+        create(tmp_vec_1,d*tot);
+        for(int i=0;i<tot;i++)
+            for(int j=0;j<d_min;j++)
+                tmp_vec_1[i*d+j]=vec_1[i*dim+j];
+        
+        delete [] vec_1;
+        vec_1=tmp_vec_1;
+    }
+    else if(type==2)
+    {
+        short int* tmp_vec_2;
+        create(tmp_vec_2,d*tot);
+        for(int i=0;i<tot;i++)
+            for(int j=0;j<d_min;j++)
+                tmp_vec_2[i*d+j]=vec_2[i*dim+j];
+        
+        delete [] vec_2;
+        vec_2=tmp_vec_2;
+    }
+    else if(type==3)
+    {
+        unsigned short int* tmp_vec_3;
+        create(tmp_vec_3,d*tot);
+        for(int i=0;i<tot;i++)
+            for(int j=0;j<d_min;j++)
+                tmp_vec_3[i*d+j]=vec_3[i*dim+j];
+        
+        delete [] vec_3;
+        vec_3=tmp_vec_3;
+    }
+    else if(type==4)
+    {
+        int* tmp_vec_4;
+        create(tmp_vec_4,d*tot);
+        for(int i=0;i<tot;i++)
+            for(int j=0;j<d_min;j++)
+                tmp_vec_4[i*d+j]=vec_4[i*dim+j];
+        
+        delete [] vec_4;
+        vec_4=tmp_vec_4;
+    }
+    else if(type==5)
+    {
+        unsigned int* tmp_vec_5;
+        create(tmp_vec_5,d*tot);
+        for(int i=0;i<tot;i++)
+            for(int j=0;j<d_min;j++)
+                tmp_vec_5[i*d+j]=vec_5[i*dim+j];
+        
+        delete [] vec_5;
+        vec_5=tmp_vec_5;
+    }
+    else if(type==6)
+    {
+        long int* tmp_vec_6;
+        create(tmp_vec_6,d*tot);
+        for(int i=0;i<tot;i++)
+            for(int j=0;j<d_min;j++)
+                tmp_vec_6[i*d+j]=vec_6[i*dim+j];
+        
+        delete [] vec_6;
+        vec_6=tmp_vec_6;
+    }
+    else if(type==7)
+    {
+        unsigned long int* tmp_vec_7;
+        create(tmp_vec_7,d*tot);
+        for(int i=0;i<tot;i++)
+            for(int j=0;j<d_min;j++)
+                tmp_vec_7[i*d+j]=vec_7[i*dim+j];
+        
+        delete [] vec_7;
+        vec_7=tmp_vec_7;
+    }
+    else if(type==8)
+    {
+        long long int* tmp_vec_8;
+        create(tmp_vec_8,d*tot);
+        for(int i=0;i<tot;i++)
+            for(int j=0;j<d_min;j++)
+                tmp_vec_8[i*d+j]=vec_8[i*dim+j];
+        
+        delete [] vec_8;
+        vec_8=tmp_vec_8;
+    }
+    else if(type==9)
+    {
+        unsigned long long int* tmp_vec_9;
+        create(tmp_vec_9,d*tot);
+        for(int i=0;i<tot;i++)
+            for(int j=0;j<d_min;j++)
+                tmp_vec_9[i*d+j]=vec_9[i*dim+j];
+        
+        delete [] vec_9;
+        vec_9=tmp_vec_9;
+    }
+    else if(type==10)
+    {
+        float* tmp_vec_10;
+        create(tmp_vec_10,d*tot);
+        for(int i=0;i<tot;i++)
+            for(int j=0;j<d_min;j++)
+                tmp_vec_10[i*d+j]=vec_10[i*dim+j];
+        
+        delete [] vec_10;
+        vec_10=tmp_vec_10;
+    }
+    else if(type==11)
+    {
+        double* tmp_vec_11;
+        create(tmp_vec_11,d*tot);
+        for(int i=0;i<tot;i++)
+            for(int j=0;j<d_min;j++)
+                tmp_vec_11[i*d+j]=vec_11[i*dim+j];
+        
+        delete [] vec_11;
+        vec_11=tmp_vec_11;
+    }
+    else if(type==12)
+    {
+        long double* tmp_vec_12;
+        create(tmp_vec_12,d*tot);
+        for(int i=0;i<tot;i++)
+            for(int j=0;j<d_min;j++)
+                tmp_vec_12[i*d+j]=vec_12[i*dim+j];
+        
+        delete [] vec_12;
+        vec_12=tmp_vec_12;
+    }
+    dim=d;
+    
+}
 

@@ -84,6 +84,7 @@ namespace MAPP_NS {
         void resize(int);
         void* ret_vec(int);
         void* ret_vec();
+        void change_dimension(int);
         
         template <typename TYPE>
         TYPE* create(TYPE*&,int);

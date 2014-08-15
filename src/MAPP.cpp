@@ -52,6 +52,7 @@ MAPP(int narg,char** args,MPI_Comm communicator)
     min=NULL;
     write=NULL;
     
+    mode=MD;
     atoms->add<TYPE0>(1, 3,"x");
     atoms->add<int>(1, 1,"type");
     
@@ -123,22 +124,6 @@ MAPP::~MAPP()
  --------------------------------------------*/
 void MAPP::read_file()
 {
-    /*
-     read cfg FeC.cfg
-     skin 0.4
-     ff FS
-     ff_coef FS.ffield
-     
-     write cfg 5000 dump x
-     
-     md nh ntv temp 300.0 10.0 create_vel 586795
-     boltzmann 8.6173324e-5
-     time_step 0.1
-     run 10000
-     
-     min l-bfgs max_iteration 10000 energy_tol 1.0e-7 m 5 H[0][0] H[1][1] H[2][2]
-     
-     */
 
     int input_file_chk=1;
     char* line;
@@ -176,6 +161,10 @@ void MAPP::command(char* command)
     else if(strcmp(args[0],"skin")==0)
     {
         atoms->add_skin(narg,args);
+    }
+    else if(strcmp(args[0],"mode")==0)
+    {
+        change_mode(narg,args);
     }
     else if(strcmp(args[0],"step_tally")==0)
     {
@@ -394,6 +383,69 @@ void MAPP::command_style(int narg,char** args)
                      " %s",args[0]);
     #undef Command_Style
     
+    
+}
+/*--------------------------------------------
+ differnt command styles
+ --------------------------------------------*/
+void MAPP::change_mode(int narg,char** args)
+{
+    if(narg!=2)
+        error->abort("wrong command: %s",args[0]);
+    int new_mode;
+    if(strcmp(args[1],"md")==0)
+    {
+        new_mode=MD;
+    }
+    else if(strcmp(args[1],"dmd")==0)
+    {
+        new_mode=DMD;
+    }
+    else
+        error->abort("unknown mode: %s",args[1]);
+    if(new_mode==mode)
+        return;
+    
+    int x_d_n;
+    int f_n;
+    if(new_mode==DMD && mode==MD)
+    {
+        x_d_n=atoms->find_exist("x_d");
+        if(x_d_n>=0)
+        {
+            if(atoms->my_p_no==0)
+                fprintf(output,"chnaging the mode to dmd,"
+                "all the velocity values will be lost\n");
+            atoms->del(x_d_n);
+        }
+        atoms->vectors[0].change_dimension(4);
+        TYPE0* x;
+        atoms->vectors[0].ret(x);
+        for(int i=0;i<atoms->natms;i++)
+            x[4*i+3]=0.0;
+        
+        f_n=atoms->find_exist("f");
+        if(f_n>=0)
+        {
+            atoms->vectors[f_n].change_dimension(4);
+            TYPE0* f;
+            atoms->vectors[f_n].ret(f);
+        }
+        else
+        {
+            atoms->add<TYPE0>(0,4,"f");
+        }
+    }
+    else if(new_mode==MD && mode==DMD)
+    {
+        if(atoms->my_p_no==0)
+            fprintf(output,"chnaging the mode to dmd,"
+            "all the alpha values will be lost\n");
+        atoms->vectors[0].change_dimension(3);
+        atoms->vectors[atoms->find("f")].change_dimension(3);
+    }
+    
+    mode=new_mode;
     
 }
 /*--------------------------------------------

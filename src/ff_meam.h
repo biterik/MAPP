@@ -202,7 +202,8 @@ namespace MAPP_NS
     public:
         ForceField_meam(MAPP *);
         ~ForceField_meam();
-        void force_calc(int,double*);
+        void force_calc1(int,double*);
+        void force_calc(int,double*);        
         TYPE0 energy_calc();
         void init();
         void fin();

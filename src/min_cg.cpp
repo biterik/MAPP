@@ -86,7 +86,7 @@ void Min_CG::init()
     x_dim=atoms->vectors[0].dim;
     f_n=atoms->find_exist("f");
     if(f_n<0)
-        f_n=atoms->add<TYPE0>(0, 3,"f");
+        f_n=atoms->add<TYPE0>(0,x_dim,"f");
     type_n=atoms->find("type");
     x_prev_n=atoms->add<TYPE0>(0,x_dim,"x_prev");
     f_prev_n=atoms->add<TYPE0>(0,x_dim,"f_prev");
@@ -436,9 +436,7 @@ void Min_CG::run()
             if(write!=NULL)
                 write->write();
             thermo->thermo_print();
-            
             err=line_search->line_min(curr_energy,alpha);
-            
             if(err==LS_S)
                 if(prev_energy-curr_energy<energy_tolerance)
                     err=MIN_F_TOLERANCE;

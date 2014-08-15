@@ -590,7 +590,6 @@ TYPE0& S,int latt,TYPE0 cmin,TYPE0 cmax)
     TYPE0 x=(C-cmin)/(cmax-cmin);
     TYPE0 sijk;
     fcut(x,sijk);
-    
     S=pow(sijk,num);
     
 }
@@ -608,7 +607,6 @@ TYPE0 ForceField_meam::zbl(TYPE0 r,TYPE0 z1
     +0.28022*exp(-0.40290*x)
     +0.50986*exp(-0.94229*x)
     +0.18175*exp(-3.1998*x);
-    
     if(r>0.0) zbl*=z1*z2*14.3997/r;
     
     return zbl;
@@ -670,16 +668,16 @@ void ForceField_meam::init()
 
     neighbor->pair_wise=0;
     
-    rho_n=atoms->add<TYPE0>(0,1,"rho");
-    rho_vec_n=atoms->add<TYPE0>(1,rho_dim,"rho_vec");
+    rho_vec_n=atoms->add<TYPE0>(0,1,"rho");
+    rho_n=atoms->add<TYPE0>(1,rho_dim,"rho_vec");
 }
 /*--------------------------------------------
  fin
  --------------------------------------------*/
 void ForceField_meam::fin()
 {
-    atoms->del(rho_vec_n);
     atoms->del(rho_n);
+    atoms->del(rho_vec_n);
     
     if(max_pairs)
     {
@@ -721,7 +719,8 @@ void ForceField_meam::force_calc
     TYPE0 re_meam_inv_i,re_meam_inv_j;
     TYPE0 dUdrij,dUdsij,phi,phip,force,forcem;
     
-    int icomp,jcomp,kcomp,itype,jtype,ktype,coef1,coef2;
+    int icomp,jcomp,kcomp,itype,jtype,ktype;
+    TYPE0 coef1,coef2;
     int icomp_rho,jcomp_rho;
     
     
@@ -785,7 +784,6 @@ void ForceField_meam::force_calc
                     int kn=0;
                     dfcut(rnorm,fcij,dfcij);
                     dfcij*=delr_meam_inv;
-                    
                     while(kn<my_list_size && sij!=0.0)
                     {
                         katm=my_list[kn];
@@ -1720,8 +1718,8 @@ TYPE0 ForceField_meam::energy_calc()
     
     TYPE0 xij,xjk,xki,yij,yjk,yki,zij,zjk,zki;
     TYPE0 rij2,rjk2,rki2;
-    TYPE0 rij;
-    int icomp,jcomp,kcomp,itype,jtype,ktype,coef1,coef2;
+    TYPE0 rij,coef1,coef2;
+    int icomp,jcomp,kcomp,itype,jtype,ktype;
     int icomp_rho,jcomp_rho;
     
     
@@ -2133,14 +2131,37 @@ TYPE0 ForceField_meam::energy_calc()
  --------------------------------------------*/
 void ForceField_meam::coef(int narg,char** args)
 {
-    if(narg!=2)
+    if(narg!=3)
         error->abort("wrong coeff command for MEAM FF");
-    read_global(args[0]);
-    read_local(args[1]);
+    read_global(args[1]);
+
+    
+    read_local(args[2]);
     
     alloy_params();
+    compute_reference_density();
     compute_pair_meam();
     
+    
+    /*
+    int no_types=atom_types->no_types;
+    int curs;
+    for(int itype=0;itype<no_types;itype++)
+    {
+        for(int jtype=itype;jtype<no_types;jtype++)
+        {
+            curs=COMP(itype,jtype);
+            
+            for(int i=0;i<nr;i++)
+            {
+                printf("%lf %lf %lf %lf %lf %lf %lf\n",phirar[curs][i][0],phirar[curs][i][1],phirar[curs][i][2],phirar[curs][i][3],phirar[curs][i][4],phirar[curs][i][5],phirar[curs][i][6]);
+                
+                
+            }
+            printf("\n\n\n cccccccc\n\n\n");
+        }
+    }
+    */
 }
 /*--------------------------------------------
  reset the vectors
@@ -2153,9 +2174,9 @@ void ForceField_meam::reset()
     atoms->vectors[rho_vec_n].ret(rho_vec);
     
     for(int i=0;i<atoms->natms;i++)
-        rho[i]=0.0;
-    for(int i=0;i<(atoms->natms+atoms->natms_ph)*rho_dim;i++)
         rho_vec[i]=0.0;
+    for(int i=0;i<(atoms->natms+atoms->natms_ph)*rho_dim;i++)
+        rho[i]=0.0;
     
     int no_pairs=neighbor->no_pairs;
     if(no_pairs>max_pairs)
@@ -2191,7 +2212,7 @@ void ForceField_meam::read_global(char* file_name)
     CREATE1D(line,MAXCHAR);
     
     
-    int eof;
+    int eof=0;
     if(atoms->my_p_no==0)
         if(feof(fp))
             eof=1;
@@ -2230,6 +2251,7 @@ void ForceField_meam::read_global(char* file_name)
         MPI_Bcast(line,lenght,MPI_CHAR,0,world);
         nargs=mapp->parse_line(line,args);
         
+        
         if(nargs)
         {
             if(nargs+no_param_args>19)
@@ -2253,17 +2275,18 @@ void ForceField_meam::read_global(char* file_name)
         
         if(no_param_args==19)
         {
-            int itype=0;
-            int chk=0;
-            while(chk==0 && itype<no_types)
-            {
-                if(strcmp(atom_types->atom_names[itype],param_args[0])==0)
-                    chk=1;
-                
-                itype++;
-            }
             
-            itype--;
+            int itype=-1;
+            int chk=0;
+
+            
+            for (int i=0;i<no_types;i++)
+                if(strcmp(param_args[0],atom_types->atom_names[i])==0)
+                    itype=i;
+            
+            if(itype>=0)
+                chk=1;
+            
             
             if(chk==1)
             {
@@ -2277,14 +2300,25 @@ void ForceField_meam::read_global(char* file_name)
                 else if(strcmp(param_args[1],"dia")==0) lattice[itype][itype]=DIAMOND;
                 else error->abort("unknown lattice");
                 
-                Z_meam[itype]=atof(args[2]);
-                ielt_meam[itype]=atoi(args[3]);
+                Z_meam[itype]=atof(param_args[2]);
+                ielt_meam[itype]=atoi(param_args[3]);
                 
-                alpha_meam[itype][itype]=atof(args[5]);
+                alpha_meam[itype][itype]=atof(param_args[5]);
                 beta0_meam[itype]=atof(param_args[6]);
                 beta1_meam[itype]=atof(param_args[7]);
                 beta2_meam[itype]=atof(param_args[8]);
                 beta3_meam[itype]=atof(param_args[9]);
+                
+                if(lattice[itype][itype]==FCC)
+                    re_meam[itype][itype]=atof(param_args[10])/sqrt(2.0);
+                else if(lattice[itype][itype]==BCC)
+                    re_meam[itype][itype]=atof(param_args[10])*0.5*sqrt(3.0);
+                else if(lattice[itype][itype]==HCP)
+                    re_meam[itype][itype]=atof(param_args[10]);
+                else if(lattice[itype][itype]==DIM)
+                    re_meam[itype][itype]=atof(param_args[10]);
+                else if(lattice[itype][itype]==DIAMOND)
+                    re_meam[itype][itype]=atof(param_args[10])*0.25*sqrt(3.0);
                 
                 Ec_meam[itype][itype]=atof(param_args[11]);
                 A_meam[itype]=atof(param_args[12]);
@@ -2409,274 +2443,285 @@ void ForceField_meam::read_local(char* file_name)
         }
         MPI_Bcast(&lenght,1,MPI_INT,0,world);
         MPI_Bcast(line,lenght,MPI_CHAR,0,world);
-        
-        
-        if(strcmp(args[0],"Ec")==0)
+        nargs=mapp->parse_line(line,args);
+
+        if(nargs)
         {
-            if(nargs!=4)
+            if(strcmp(args[0],"Ec")==0)
+            {
+                if(nargs!=4)
+                    error->abort("wrong command");
+                icomp_0=atoi(args[1])-1;
+                icomp_1=atoi(args[2])-1;
+                
+                if(icomp_0<0 && icomp_0>=no_types)
+                    error->abort("unknown component: %i",icomp_0);
+                if(icomp_1<0 && icomp_1>=no_types)
+                    error->abort("unknown component: %i",icomp_1);
+                icomp_0=type_ref[icomp_0];
+                icomp_1=type_ref[icomp_1];
+                Ec_meam[icomp_0][icomp_1]=atof(args[3]);
+                Ec_meam[icomp_1][icomp_0]=Ec_meam[icomp_0][icomp_1];
+                
+            }
+            else if(strcmp(args[0],"alpha")==0)
+            {
+                if(nargs!=4)
+                    error->abort("wrong command");
+                icomp_0=atoi(args[1])-1;
+                icomp_1=atoi(args[2])-1;
+                
+                if(icomp_0<0 && icomp_0>=no_types)
+                    error->abort("unknown component: %i",icomp_0);
+                if(icomp_1<0 && icomp_1>=no_types)
+                    error->abort("unknown component: %i",icomp_1);
+                icomp_0=type_ref[icomp_0];
+                icomp_1=type_ref[icomp_1];
+                alpha_meam[icomp_0][icomp_1]=atof(args[3]);
+                alpha_meam[icomp_1][icomp_0]=alpha_meam[icomp_0][icomp_1];
+            }
+            else if(strcmp(args[0],"rho0")==0)
+            {
+                if(nargs!=3)
+                    error->abort("wrong command");
+                icomp_0=atoi(args[1])-1;
+                
+                if(icomp_0<0 && icomp_0>=no_types)
+                    error->abort("unknown component: %i",icomp_0);
+                icomp_0=type_ref[icomp_0];
+                rho0_meam[icomp_0]=atof(args[2]);
+            }
+            else if(strcmp(args[0],"delta")==0)
+            {
+                if(nargs!=4)
+                    error->abort("wrong command");
+                icomp_0=atoi(args[1])-1;
+                icomp_1=atoi(args[2])-1;
+                
+                if(icomp_0<0 && icomp_0>=no_types)
+                    error->abort("unknown component: %i",icomp_0);
+                if(icomp_1<0 && icomp_1>=no_types)
+                    error->abort("unknown component: %i",icomp_1);
+                icomp_0=type_ref[icomp_0];
+                icomp_1=type_ref[icomp_1];
+                delta_meam[icomp_0][icomp_1]=atof(args[3]);
+            }
+            else if(strcmp(args[0],"lattce")==0)
+            {
+                if(nargs!=4)
+                    error->abort("wrong command");
+                icomp_0=atoi(args[1])-1;
+                icomp_1=atoi(args[2])-1;
+                if(icomp_0<0 && icomp_0>=no_types)
+                    error->abort("unknown component: %i",icomp_0);
+                if(icomp_1<0 && icomp_1>=no_types)
+                    error->abort("unknown component: %i",icomp_1);
+                icomp_0=type_ref[icomp_0];
+                icomp_1=type_ref[icomp_1];
+                
+                if(strcmp(args[3],"fcc")==0) lattice[icomp_0][icomp_1]=FCC;
+                else if(strcmp(args[3],"bcc")==0) lattice[icomp_0][icomp_1]=BCC;
+                else if(strcmp(args[3],"hcp")==0) lattice[icomp_0][icomp_1]=HCP;
+                else if(strcmp(args[3],"dim")==0) lattice[icomp_0][icomp_1]=DIM;
+                else if(strcmp(args[3],"dia")==0) lattice[icomp_0][icomp_1]=DIAMOND;
+                else if(strcmp(args[3],"b1")==0) lattice[icomp_0][icomp_1]=B1;
+                else if(strcmp(args[3],"c11")==0) lattice[icomp_0][icomp_1]=C11;
+                else if(strcmp(args[3],"l12")==0) lattice[icomp_0][icomp_1]=L12;
+                else if(strcmp(args[3],"b2")==0) lattice[icomp_0][icomp_1]=B2;
+                else error->abort("unknown lattice %s",args[3]);
+                
+                lattice[icomp_1][icomp_0]=lattice[icomp_0][icomp_1];
+            }
+            else if(strcmp(args[0],"attrac")==0)
+            {
+                if(nargs!=4)
+                    error->abort("wrong command");
+                icomp_0=atoi(args[1])-1;
+                icomp_1=atoi(args[2])-1;
+                
+                if(icomp_0<0 && icomp_0>=no_types)
+                    error->abort("unknown component: %i",icomp_0);
+                if(icomp_1<0 && icomp_1>=no_types)
+                    error->abort("unknown component: %i",icomp_1);
+                icomp_0=type_ref[icomp_0];
+                icomp_1=type_ref[icomp_1];
+                attrac_meam[icomp_0][icomp_1]=atof(args[3]);
+            }
+            else if(strcmp(args[0],"repuls")==0)
+            {
+                if(nargs!=4)
+                    error->abort("wrong command: %s",line);
+                icomp_0=atoi(args[1])-1;
+                icomp_1=atoi(args[2])-1;
+                
+                if(icomp_0<0 && icomp_0>=no_types)
+                    error->abort("unknown component: %i",icomp_0);
+                if(icomp_1<0 && icomp_1>=no_types)
+                    error->abort("unknown component: %i",icomp_1);
+                icomp_0=type_ref[icomp_0];
+                icomp_1=type_ref[icomp_1];
+                repuls_meam[icomp_0][icomp_1]=atof(args[3]);
+            }
+            else if(strcmp(args[0],"nn2")==0)
+            {
+                if(nargs!=4)
+                    error->abort("wrong command");
+                icomp_0=atoi(args[1])-1;
+                icomp_1=atoi(args[2])-1;
+                
+                if(icomp_0<0 && icomp_0>=no_types)
+                    error->abort("unknown component: %i",icomp_0);
+                if(icomp_1<0 && icomp_1>=no_types)
+                    error->abort("unknown component: %i",icomp_1);
+                icomp_0=type_ref[icomp_0];
+                icomp_1=type_ref[icomp_1];
+                nn2_meam[icomp_0][icomp_1]=atoi(args[3]);
+                nn2_meam[icomp_1][icomp_0]=nn2_meam[icomp_0][icomp_1];
+            }
+            else if(strcmp(args[0],"Cmin")==0)
+            {
+                if(nargs!=5)
+                    error->abort("wrong command");
+                icomp_0=atoi(args[1])-1;
+                icomp_1=atoi(args[2])-1;
+                icomp_2=atoi(args[3])-1;
+                
+                if(icomp_0<0 && icomp_0>=no_types)
+                    error->abort("unknown component: %i",icomp_0);
+                if(icomp_1<0 && icomp_1>=no_types)
+                    error->abort("unknown component: %i",icomp_1);
+                if(icomp_2<0 && icomp_2>=no_types)
+                    error->abort("unknown component: %i",icomp_2);
+                icomp_0=type_ref[icomp_0];
+                icomp_1=type_ref[icomp_1];
+                icomp_2=type_ref[icomp_2];
+                c_min[icomp_0][icomp_1][icomp_2]=atof(args[4]);
+                c_min[icomp_1][icomp_0][icomp_2]=c_min[icomp_0][icomp_1][icomp_2];
+            }
+            else if(strcmp(args[0],"Cmax")==0)
+            {
+                if(nargs!=5)
+                    error->abort("wrong command");
+                icomp_0=atoi(args[1])-1;
+                icomp_1=atoi(args[2])-1;
+                icomp_2=atoi(args[3])-1;
+                
+                if(icomp_0<0 && icomp_0>=no_types)
+                    error->abort("unknown component: %i",icomp_0);
+                if(icomp_1<0 && icomp_1>=no_types)
+                    error->abort("unknown component: %i",icomp_1);
+                if(icomp_2<0 && icomp_2>=no_types)
+                    error->abort("unknown component: %i",icomp_2);
+                icomp_0=type_ref[icomp_0];
+                icomp_1=type_ref[icomp_1];
+                icomp_2=type_ref[icomp_2];
+                c_max[icomp_0][icomp_1][icomp_2]=atof(args[4]);
+                c_max[icomp_1][icomp_0][icomp_2]=c_max[icomp_0][icomp_1][icomp_2];
+            }
+            else if(strcmp(args[0],"rc")==0)
+            {
+                if(nargs!=2)
+                    error->abort("wrong command");
+                rc_meam=atof(args[1]);
+            }
+            else if(strcmp(args[0],"delr")==0)
+            {
+                if(nargs!=2)
+                    error->abort("wrong command");
+                delr_meam=atof(args[1]);
+            }
+            else if(strcmp(args[0],"augt1")==0)
+            {
+                if(nargs!=2)
+                    error->abort("wrong command");
+                augt1=atoi(args[1]);
+            }
+            else if(strcmp(args[0],"gsmooth_factor")==0)
+            {
+                if(nargs!=2)
+                    error->abort("wrong command");
+                gsmooth_factor=atof(args[1]);
+            }
+            else if(strcmp(args[0],"re")==0)
+            {
+                if(nargs!=4)
+                    error->abort("wrong command");
+                icomp_0=atoi(args[1])-1;
+                icomp_1=atoi(args[2])-1;
+                
+                if(icomp_0<0 && icomp_0>=no_types)
+                    error->abort("unknown component: %i",icomp_0);
+                if(icomp_1<0 && icomp_1>=no_types)
+                    error->abort("unknown component: %i",icomp_1);
+                icomp_0=type_ref[icomp_0];
+                icomp_1=type_ref[icomp_1];
+                re_meam[icomp_0][icomp_1]=atof(args[3]);
+                re_meam[icomp_1][icomp_0]=re_meam[icomp_0][icomp_1];
+            }
+            else if(strcmp(args[0],"ialloy")==0)
+            {
+                if(nargs!=2)
+                    error->abort("wrong command");
+                ialloy=atoi(args[1]);
+            }
+            else if(strcmp(args[0],"mixture_ref_t")==0)
+            {
+                if(nargs!=2)
+                    error->abort("wrong command");
+                mix_ref_t=atoi(args[1]);
+            }
+            else if(strcmp(args[0],"erose_form")==0)
+            {
+                if(nargs!=2)
+                    error->abort("wrong command");
+                erose_form=atoi(args[1]);
+            }
+            else if(strcmp(args[0],"zbl")==0)
+            {
                 error->abort("wrong command");
-            icomp_0=atoi(args[1]);
-            icomp_1=atoi(args[2]);
+                icomp_0=MIN(atoi(args[1]),atoi(args[2]))-1;
+                icomp_1=MAX(atoi(args[1]),atoi(args[2]))-1;
+                
+                if(icomp_0<0 && icomp_0>=no_types)
+                    error->abort("unknown component: %i",icomp_0);
+                if(icomp_1<0 && icomp_1>=no_types)
+                    error->abort("unknown component: %i",icomp_1);
+                icomp_0=type_ref[icomp_0];
+                icomp_1=type_ref[icomp_1];
+                zbl_meam[icomp_0][icomp_1]=atoi(args[3]);
+            }
+            else if(strcmp(args[0],"emb_lin_neg")==0)
+            {
+                if(nargs!=2)
+                    error->abort("wrong command");
+                emb_lin_neg=atoi(args[1]);
+            }
+            else if(strcmp(args[0],"bkgd_dyn")==0)
+            {
+                if(nargs!=2)
+                    error->abort("wrong command");
+                emb_lin_neg=atoi(args[1]);
+            }
+            else
+                error->abort("wrong input");
             
-            if(icomp_0<0 && icomp_0>=no_types)
-                error->abort("unknown component: %i",icomp_0);
-            if(icomp_1<0 && icomp_1>=no_types)
-                error->abort("unknown component: %i",icomp_1);
-            icomp_0=type_ref[icomp_0];
-            icomp_1=type_ref[icomp_1];
-            Ec_meam[icomp_0][icomp_1]=atof(args[3]);
-            Ec_meam[icomp_1][icomp_0]=Ec_meam[icomp_0][icomp_1];
             
+            for(int i=0;i<nargs;i++)
+                delete [] args[i];
+            if(nargs)
+                delete [] args;
         }
-        else if(strcmp(args[0],"alpha")==0)
-        {
-            if(nargs!=4)
-                error->abort("wrong command");
-            icomp_0=atoi(args[1]);
-            icomp_1=atoi(args[2]);
-            
-            if(icomp_0<0 && icomp_0>=no_types)
-                error->abort("unknown component: %i",icomp_0);
-            if(icomp_1<0 && icomp_1>=no_types)
-                error->abort("unknown component: %i",icomp_1);
-            icomp_0=type_ref[icomp_0];
-            icomp_1=type_ref[icomp_1];
-            alpha_meam[icomp_0][icomp_1]=atof(args[3]);
-            alpha_meam[icomp_1][icomp_0]=alpha_meam[icomp_0][icomp_1];
-        }
-        else if(strcmp(args[0],"rho0")==0)
-        {
-            if(nargs!=3)
-                error->abort("wrong command");
-            icomp_0=atoi(args[1]);
-            
-            if(icomp_0<0 && icomp_0>=no_types)
-                error->abort("unknown component: %i",icomp_0);
-            icomp_0=type_ref[icomp_0];
-            rho0_meam[icomp_0]=atof(args[2]);
-        }
-        else if(strcmp(args[0],"delta")==0)
-        {
-            if(nargs!=4)
-                error->abort("wrong command");
-            icomp_0=atoi(args[1]);
-            icomp_1=atoi(args[2]);
-            
-            if(icomp_0<0 && icomp_0>=no_types)
-                error->abort("unknown component: %i",icomp_0);
-            if(icomp_1<0 && icomp_1>=no_types)
-                error->abort("unknown component: %i",icomp_1);
-            icomp_0=type_ref[icomp_0];
-            icomp_1=type_ref[icomp_1];
-            delta_meam[icomp_0][icomp_1]=atof(args[3]);
-        }
-        else if(strcmp(args[0],"lattce")==0)
-        {
-            if(nargs!=3)
-                error->abort("wrong command");
-            icomp_0=atoi(args[1]);
-            icomp_1=atoi(args[2]);
-            if(icomp_0<0 && icomp_0>=no_types)
-                error->abort("unknown component: %i",icomp_0);
-            if(icomp_1<0 && icomp_1>=no_types)
-                error->abort("unknown component: %i",icomp_1);
-            icomp_0=type_ref[icomp_0];
-            icomp_1=type_ref[icomp_1];
-            
-            if(strcmp(args[3],"fcc")==0) lattice[icomp_0][icomp_1]=FCC;
-            else if(strcmp(args[3],"bcc")==0) lattice[icomp_0][icomp_1]=BCC;
-            else if(strcmp(args[3],"hcp")==0) lattice[icomp_0][icomp_1]=HCP;
-            else if(strcmp(args[3],"dim")==0) lattice[icomp_0][icomp_1]=DIM;
-            else if(strcmp(args[3],"dia")==0) lattice[icomp_0][icomp_1]=DIAMOND;
-            else if(strcmp(args[3],"b1")==0) lattice[icomp_0][icomp_1]=B1;
-            else if(strcmp(args[3],"c11")==0) lattice[icomp_0][icomp_1]=C11;
-            else if(strcmp(args[3],"l12")==0) lattice[icomp_0][icomp_1]=L12;
-            else if(strcmp(args[3],"b2")==0) lattice[icomp_0][icomp_1]=B2;
-            else error->abort("unknown lattice");
-            
-            lattice[icomp_1][icomp_0]=lattice[icomp_0][icomp_1];
-        }
-        else if(strcmp(args[0],"attrac")==0)
-        {
-            if(nargs!=4)
-                error->abort("wrong command");
-            icomp_0=atoi(args[1]);
-            icomp_1=atoi(args[2]);
-            
-            if(icomp_0<0 && icomp_0>=no_types)
-                error->abort("unknown component: %i",icomp_0);
-            if(icomp_1<0 && icomp_1>=no_types)
-                error->abort("unknown component: %i",icomp_1);
-            icomp_0=type_ref[icomp_0];
-            icomp_1=type_ref[icomp_1];
-            attrac_meam[icomp_0][icomp_1]=atof(args[3]);
-        }
-        else if(strcmp(args[0],"repuls")==0)
-        {
-            if(nargs!=4)
-                error->abort("wrong command");
-            icomp_0=atoi(args[1]);
-            icomp_1=atoi(args[2]);
-            
-            if(icomp_0<0 && icomp_0>=no_types)
-                error->abort("unknown component: %i",icomp_0);
-            if(icomp_1<0 && icomp_1>=no_types)
-                error->abort("unknown component: %i",icomp_1);
-            icomp_0=type_ref[icomp_0];
-            icomp_1=type_ref[icomp_1];
-            repuls_meam[icomp_0][icomp_1]=atof(args[3]);
-        }
-        else if(strcmp(args[0],"nn2")==0)
-        {
-            if(nargs!=4)
-                error->abort("wrong command");
-            icomp_0=atoi(args[1]);
-            icomp_1=atoi(args[2]);
-            
-            if(icomp_0<0 && icomp_0>=no_types)
-                error->abort("unknown component: %i",icomp_0);
-            if(icomp_1<0 && icomp_1>=no_types)
-                error->abort("unknown component: %i",icomp_1);
-            icomp_0=type_ref[icomp_0];
-            icomp_1=type_ref[icomp_1];
-            nn2_meam[icomp_0][icomp_1]=atoi(args[3]);
-            nn2_meam[icomp_1][icomp_0]=nn2_meam[icomp_0][icomp_1];
-        }
-        else if(strcmp(args[0],"Cmin")==0)
-        {
-            if(nargs!=5)
-                error->abort("wrong command");
-            icomp_0=atoi(args[1]);
-            icomp_1=atoi(args[2]);
-            icomp_2=atoi(args[3]);
-            
-            if(icomp_0<0 && icomp_0>=no_types)
-                error->abort("unknown component: %i",icomp_0);
-            if(icomp_1<0 && icomp_1>=no_types)
-                error->abort("unknown component: %i",icomp_1);
-            if(icomp_2<0 && icomp_2>=no_types)
-                error->abort("unknown component: %i",icomp_2);
-            icomp_0=type_ref[icomp_0];
-            icomp_1=type_ref[icomp_1];
-            icomp_2=type_ref[icomp_2];
-            c_min[icomp_0][icomp_1][icomp_2]=atof(args[4]);
-            c_min[icomp_1][icomp_0][icomp_2]=c_min[icomp_0][icomp_1][icomp_2];
-        }
-        else if(strcmp(args[0],"Cmax")==0)
-        {
-            if(nargs!=5)
-                error->abort("wrong command");
-            icomp_0=atoi(args[1]);
-            icomp_1=atoi(args[2]);
-            icomp_2=atoi(args[3]);
-            
-            if(icomp_0<0 && icomp_0>=no_types)
-                error->abort("unknown component: %i",icomp_0);
-            if(icomp_1<0 && icomp_1>=no_types)
-                error->abort("unknown component: %i",icomp_1);
-            if(icomp_2<0 && icomp_2>=no_types)
-                error->abort("unknown component: %i",icomp_2);
-            icomp_0=type_ref[icomp_0];
-            icomp_1=type_ref[icomp_1];
-            icomp_2=type_ref[icomp_2];
-            c_max[icomp_0][icomp_1][icomp_2]=atof(args[4]);
-            c_max[icomp_1][icomp_0][icomp_2]=c_max[icomp_0][icomp_1][icomp_2];
-        }
-        else if(strcmp(args[0],"rc")==0)
-        {
-            if(nargs!=2)
-                error->abort("wrong command");
-            rc_meam=atof(args[1]);
-        }
-        else if(strcmp(args[0],"delr")==0)
-        {
-            if(nargs!=2)
-                error->abort("wrong command");
-            delr_meam=atof(args[1]);
-        }
-        else if(strcmp(args[0],"augt1")==0)
-        {
-            if(nargs!=2)
-                error->abort("wrong command");
-            augt1=atoi(args[1]);
-        }
-        else if(strcmp(args[0],"gsmooth_factor")==0)
-        {
-            if(nargs!=2)
-                error->abort("wrong command");
-            gsmooth_factor=atof(args[1]);
-        }
-        else if(strcmp(args[0],"re")==0)
-        {
-            if(nargs!=4)
-                error->abort("wrong command");
-            icomp_0=atoi(args[1]);
-            icomp_1=atoi(args[2]);
-            
-            if(icomp_0<0 && icomp_0>=no_types)
-                error->abort("unknown component: %i",icomp_0);
-            if(icomp_1<0 && icomp_1>=no_types)
-                error->abort("unknown component: %i",icomp_1);
-            icomp_0=type_ref[icomp_0];
-            icomp_1=type_ref[icomp_1];
-            re_meam[icomp_0][icomp_1]=atof(args[3]);
-            re_meam[icomp_1][icomp_0]=re_meam[icomp_0][icomp_1];
-        }
-        else if(strcmp(args[0],"ialloy")==0)
-        {
-            if(nargs!=2)
-                error->abort("wrong command");
-            ialloy=atoi(args[1]);
-        }
-        else if(strcmp(args[0],"mixture_ref_t")==0)
-        {
-            if(nargs!=2)
-                error->abort("wrong command");
-            mix_ref_t=atoi(args[1]);
-        }
-        else if(strcmp(args[0],"erose_form")==0)
-        {
-            if(nargs!=2)
-                error->abort("wrong command");
-            erose_form=atoi(args[1]);
-        }
-        else if(strcmp(args[0],"zbl")==0)
-        {
-            error->abort("wrong command");
-            icomp_0=MIN(atoi(args[1]),atoi(args[2]));
-            icomp_1=MAX(atoi(args[1]),atoi(args[2]));
-            
-            if(icomp_0<0 && icomp_0>=no_types)
-                error->abort("unknown component: %i",icomp_0);
-            if(icomp_1<0 && icomp_1>=no_types)
-                error->abort("unknown component: %i",icomp_1);
-            icomp_0=type_ref[icomp_0];
-            icomp_1=type_ref[icomp_1];
-           zbl_meam[icomp_0][icomp_1]=atoi(args[3]);
-        }
-        else if(strcmp(args[0],"emb_lin_neg")==0)
-        {
-            if(nargs!=2)
-                error->abort("wrong command");
-            emb_lin_neg=atoi(args[1]);
-        }
-        else if(strcmp(args[0],"bkgd_dyn")==0)
-        {
-            if(nargs!=2)
-                error->abort("wrong command");
-            emb_lin_neg=atoi(args[1]);
-        }
-        else
-            error->abort("wrong input");
         
         if(atoms->my_p_no==0)
+        {
             if(feof(fp))
                 eof=1;
+        }
         MPI_Bcast(&eof,1,MPI_INT,0,world);
     }
     
 
-    delete [] args;
+    //delete [] args;
     delete [] line;
     
     if(atoms->my_p_no==0)
@@ -2761,6 +2806,7 @@ void ForceField_meam::compute_pair_meam()
             {
                 r=static_cast<TYPE0>(in)*dr;
                 phirar[curs][in][0]=phi_meam(r,itype,jtype);
+                //cout<<in<<" "<<phirar[curs][in][0] <<endl;
                 if(nn2_meam[itype][jtype]==1)
                 {
                     get_Zij(Z1,lattice[itype][jtype]);
@@ -2839,28 +2885,29 @@ void ForceField_meam::compute_pair_meam()
                         tmp1=r;
                         tmp2=-Z2*scrn/Z1;
                         tmp3=arat;
+                        
                         for(int i=0;i<nmax;i++)
                         {
                             tmp0*=tmp2;
                             tmp1*=tmp3;
                             phirar[curs][in][0]+=tmp0*phi_meam(tmp1,itype,itype);
+                            
                         }
                     }
-                    
-  
                     
                 }
                 if(zbl_meam[itype][jtype]==1)
                 {
                     astar=alpha_meam[itype][jtype]*(r/re_meam[itype][jtype]-1.0);
+                    
                     if(astar<=-3.0)
                     {
-                        phirar[curs][in][0]=zbl(r,ielt_meam[itype],ielt_meam[jtype]);
+                        phirar[curs][in][0]=zbl(r,static_cast<TYPE0>(ielt_meam[itype]),static_cast<TYPE0>(ielt_meam[jtype]));
                     }
                     else if(astar>-3.0 && astar<-1.0)
                     {
                         fcut(1.0+0.5*(astar+1.0),frac);
-                        phizbl=zbl(r,ielt_meam[itype],ielt_meam[jtype]);
+                        phizbl=zbl(r,static_cast<TYPE0>(ielt_meam[itype]),static_cast<TYPE0>(ielt_meam[jtype]));
                         phirar[curs][in][0]=frac*phirar[curs][in][0]+(1.0-frac)*phizbl;
                     }
                 }
@@ -3023,9 +3070,11 @@ TYPE0& rho12,TYPE0& rho22,TYPE0& rho32)
     }
     else
     {
-        error->abort("unknown lattice");
+        error->abort("unknown lattice %d",lat);
     }
 
+    
+    
     TYPE0 arat,scrn,rhoa01nn,rhoa02nn,C,s111,s112,s221,S11,S22;
     if(nn2_meam[a][b]==1)
     {
@@ -3131,8 +3180,11 @@ TYPE0 ForceField_meam::phi_meam(TYPE0 r,int a
     get_dens_ref(r,a,b,rho01,rho11,rho21,rho31
     ,rho02,rho12,rho22,rho32);
     
+    
     if(rho01<=1.0e-14 && rho02<=1.0e-14)
+    {
         return 0.0;
+    }
     
     if(lattice[a][b]==C11)
     {
@@ -3239,16 +3291,19 @@ TYPE0 ForceField_meam::phi_meam(TYPE0 r,int a
             if(bkgd_dyn==1)
             {
                 rho_bkgd1=rho0_meam[a]*Z_meam[a];
-                rho_bkgd1=rho0_meam[b]*Z_meam[b];
+                rho_bkgd2=rho0_meam[b]*Z_meam[b];
             }
             else
             {
                 rho_bkgd1=rho_ref_meam[a];
-                rho_bkgd1=rho_ref_meam[b];
+                rho_bkgd2=rho_ref_meam[b];
             }
+            
+            
         }
         rhobar1=rho01/rho_bkgd1*G1;
         rhobar2=rho02/rho_bkgd2*G2;
+        
     }
     
     TYPE0 F1,F2,phiaa=0.0,phibb=0.0;
@@ -3313,11 +3368,11 @@ TYPE0 ForceField_meam::phi_meam(TYPE0 r,int a
         phi_m=Eu/3.0-F1/4.0-F2/12.0-phiaa;
     }
     else
+    {
         phi_m=(2.0*Eu-F1-F2)/Z12;
-    
+    }
     if(r==0.0)
         phi_m=0.0;
-    
     
     return phi_m;
 }

@@ -10,6 +10,7 @@
 #include <stdio.h>
 
 namespace MAPP_NS {
+    enum {MD,DMD};
     class MAPP {
     private:
     protected:
@@ -17,6 +18,7 @@ namespace MAPP_NS {
         MAPP(int,char**,MPI_Comm);
         ~MAPP();
         MPI_Comm world;
+        int mode;
         int step_no;
         int step_tally;
         class Memory* memory;
@@ -44,6 +46,7 @@ namespace MAPP_NS {
         void read_style(int,char**);
         void write_style(int,char**);
         void command_style(int,char**);
+        void change_mode(int,char**);
         int parse_line(char*,char**&);
         int hash_remover(char*,char*&);
         
