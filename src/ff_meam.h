@@ -112,49 +112,49 @@ namespace MAPP_NS
          */
         
         /*---------------------------------*/
-        int emb_lin_neg;//not set yet
-        int ialloy;//not set yet
-        int mix_ref_t;//not set yet
-        int bkgd_dyn;//not set yet
-        int augt1;//not set yet
-        int erose_form;//not set yet
+        int emb_lin_neg;//checked
+        int ialloy;//checked
+        int mix_ref_t;//checked
+        int bkgd_dyn;//checked
+        int augt1;//checked
+        int erose_form;//checked
         int nr;
-        TYPE0 delr_meam;//not set yet
-        TYPE0 delr_meam_inv;//not set yet
-        TYPE0 rc_meam;//not set yet
-        TYPE0 gsmooth_factor;//not set yet
+        TYPE0 delr_meam;//checked
+        TYPE0 delr_meam_inv;//checked
+        TYPE0 rc_meam;//checked
+        TYPE0 gsmooth_factor;//checked
         TYPE0 dr;
         TYPE0 dr_inv;
         
-        TYPE0*** c_min;//not set yet
-        TYPE0*** c_max;//not set yet
+        TYPE0*** c_min;//checked
+        TYPE0*** c_max;//checked
         TYPE0*** phirar;
         
-        TYPE0** re_meam;//not set yet
-        TYPE0** ebound_meam;//not set yet
-        TYPE0** Ec_meam;//not set yet
-        TYPE0** alpha_meam;//not set yet
-        TYPE0** delta_meam;//not set yet
-        TYPE0** attrac_meam;//not set yet
-        TYPE0** repuls_meam;//not set yet
-        int** lattice;//not set yet
-        int** nn2_meam;//not set yet
-        int** zbl_meam;//not set yet
+        TYPE0** re_meam;//checked
+        TYPE0** ebound_meam;//checked
+        TYPE0** Ec_meam;//checked
+        TYPE0** alpha_meam;//checked
+        TYPE0** delta_meam;//checked
+        TYPE0** attrac_meam;//checked
+        TYPE0** repuls_meam;//checked
+        int** lattice;//checked
+        int** nn2_meam;//checked
+        int** zbl_meam;//checked
         
-        TYPE0* rho0_meam;//not set yet
-        TYPE0* beta0_meam;//not set yet
-        TYPE0* beta1_meam;//not set yet
-        TYPE0* beta2_meam;//not set yet
-        TYPE0* beta3_meam;//not set yet
-        TYPE0* t0_meam;//not set yet
-        TYPE0* t1_meam;//not set yet
-        TYPE0* t2_meam;//not set yet
-        TYPE0* t3_meam;//not set yet
-        TYPE0* Z_meam;//not set yet
-        TYPE0* rho_ref_meam;//not set yet
-        TYPE0* A_meam;//not set yet
-        int* ibar_meam;//not set yet
-        int* ielt_meam;//not set yet
+        TYPE0* rho0_meam;//checked
+        TYPE0* beta0_meam;//checked
+        TYPE0* beta1_meam;//checked
+        TYPE0* beta2_meam;//checked
+        TYPE0* beta3_meam;//checked
+        TYPE0* t0_meam;//checked
+        TYPE0* t1_meam;//checked
+        TYPE0* t2_meam;//checked
+        TYPE0* t3_meam;//checked
+        TYPE0* Z_meam;//checked
+        TYPE0* rho_ref_meam;//checked
+        TYPE0* A_meam;//checked
+        int* ibar_meam;//checked
+        int* ielt_meam;//checked
         int* type_ref;//not set yet
         
         void get_dens_ref(TYPE0,int,int,TYPE0&,TYPE0&,TYPE0&,TYPE0&,TYPE0&,TYPE0&,TYPE0&,TYPE0&);

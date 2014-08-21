@@ -12,9 +12,7 @@ namespace MAPP_NS {
     protected:
         int x_n;
         int x_prev_n;
-        
         int f_n;
-        
         int dim;
         int x_dim;
         

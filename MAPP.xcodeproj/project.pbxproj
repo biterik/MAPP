@@ -11,6 +11,7 @@
 		270B59B61976F6EA00640B29 /* write_cfg.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 270B59B41976F6EA00640B29 /* write_cfg.cpp */; };
 		271278C4198001A700C83264 /* ff_meam.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 271278C2198001A700C83264 /* ff_meam.cpp */; };
 		2725B52E1979A98900F5183C /* command_change_box.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2725B52C1979A98900F5183C /* command_change_box.cpp */; };
+		273BB8EA19A01E190051E525 /* ff_dmd.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 273BB8E819A01E190051E525 /* ff_dmd.cpp */; };
 		277A87E11974822D00D57402 /* atom_types.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 277A87AF1974822D00D57402 /* atom_types.cpp */; };
 		277A87E21974822D00D57402 /* atoms.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 277A87B11974822D00D57402 /* atoms.cpp */; };
 		277A87E31974822D00D57402 /* error.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 277A87B31974822D00D57402 /* error.cpp */; };
@@ -61,6 +62,8 @@
 		2725B52B1979A95E00F5183C /* command_styles.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = command_styles.h; sourceTree = "<group>"; };
 		2725B52C1979A98900F5183C /* command_change_box.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = command_change_box.cpp; sourceTree = "<group>"; };
 		2725B52D1979A98900F5183C /* command_change_box.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = command_change_box.h; sourceTree = "<group>"; };
+		273BB8E819A01E190051E525 /* ff_dmd.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ff_dmd.cpp; sourceTree = "<group>"; };
+		273BB8E919A01E190051E525 /* ff_dmd.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ff_dmd.h; sourceTree = "<group>"; };
 		277A87A2197481D700D57402 /* MAPP */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = MAPP; sourceTree = BUILT_PRODUCTS_DIR; };
 		277A87AF1974822D00D57402 /* atom_types.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = atom_types.cpp; sourceTree = "<group>"; };
 		277A87B01974822D00D57402 /* atom_types.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = atom_types.h; sourceTree = "<group>"; };
@@ -171,6 +174,8 @@
 				2795CCE2199170DD00CDDF49 /* ff_eam.h */,
 				27AF6AB11998773A00DEE20C /* ff_eam_dmd.cpp */,
 				27AF6AB21998773A00DEE20C /* ff_eam_dmd.h */,
+				273BB8E819A01E190051E525 /* ff_dmd.cpp */,
+				273BB8E919A01E190051E525 /* ff_dmd.h */,
 				277A87BB1974822D00D57402 /* ff_styles.h */,
 				277A87BC1974822D00D57402 /* init.h */,
 				277A87BD1974822D00D57402 /* line_search.cpp */,
@@ -298,6 +303,7 @@
 				277A87ED1974822D00D57402 /* min.cpp in Sources */,
 				277A87F71974822D00D57402 /* xmath.cpp in Sources */,
 				271278C4198001A700C83264 /* ff_meam.cpp in Sources */,
+				273BB8EA19A01E190051E525 /* ff_dmd.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

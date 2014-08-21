@@ -6,7 +6,6 @@
 #define __MAPP__ff_eam_dmd__
 
 #include <iostream>
-#include <iostream>
 #include "ff.h"
 #include "atoms.h"
 namespace MAPP_NS
@@ -26,7 +25,7 @@ namespace MAPP_NS
         
         int eam_mode;
         int nr,nrho;
-        TYPE0 dr,drho,dr_inv,drho_inv;
+        TYPE0 dr,drho,dr_inv,drho_inv,rho_max;
         
         void allocate();
         int allocated;
@@ -43,7 +42,7 @@ namespace MAPP_NS
         TYPE0* nrgy_strss;
         TYPE0 cut_sq;
         TYPE0 cut_sq_mod;
-        TYPE0 rc;
+        TYPE0 rc,mod_rc,c_0,kbT;
         
         /*--------------------------------------------*/
         TYPE0* drhoi_dr;

@@ -283,6 +283,7 @@ namespace MAPP_NS {
         void chng_dim(int);
         void set_ph(TYPE0);
         void set_ph(int);
+        void store_0();
         void update_0(int,int,class VecLst*);
         
         // high level griding

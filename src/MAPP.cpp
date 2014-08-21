@@ -30,6 +30,7 @@ using namespace std;
 MAPP::
 MAPP(int narg,char** args,MPI_Comm communicator)
 {
+
     step_no=0;
     step_tally=1000;
     output = stdout;
@@ -61,7 +62,6 @@ MAPP(int narg,char** args,MPI_Comm communicator)
     input_file=stdin;
     
     int iarg=1;
-    
     while(iarg<narg)
     {
         

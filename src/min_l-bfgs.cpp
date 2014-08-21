@@ -153,7 +153,7 @@ void Min_LBFGS::init()
     atoms->ph_setup(1,vecs_comm);
     neighbor->init();
     neighbor->create_list(0,1);
-    
+    atoms->store_0();
     CREATE1D(rho,m_it);
     CREATE1D(alpha,m_it);
     line_search=new LineSearch_BackTrack(mapp,vecs_comm);

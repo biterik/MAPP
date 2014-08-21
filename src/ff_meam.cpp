@@ -39,7 +39,7 @@ ForceField_meam(MAPP* mapp):ForceField(mapp)
             }
         }
         
-        nr =1000;
+        nr=1000;
         
         int tot_types=(no_types+1)*no_types/2;
         CREATE1D(phirar,tot_types);
@@ -308,7 +308,7 @@ void ForceField_meam::G_gam(TYPE0 Gamma,int ibar
         gsmooth_switchpoint=-gsmooth_factor_0/(gsmooth_factor_0+1.0);
         if(Gamma<gsmooth_switchpoint)
         {
-            G=pow(gsmooth_switchpoint/Gamma,gsmooth_factor)
+            G=pow(gsmooth_switchpoint/Gamma,gsmooth_factor_0)
             /(gsmooth_factor+1.0);
             G=sqrt(G);
         }
@@ -391,11 +391,11 @@ void ForceField_meam::dG_gam(TYPE0 Gamma,int ibar
  --------------------------------------------*/
 void ForceField_meam::fcut(TYPE0 xi,TYPE0& fc)
 {
-    if(xi>1.0)
+    if(xi>=1.0)
     {
         fc=1.0;
     }
-    else if (xi<0.0)
+    else if (xi<=0.0)
     {
         fc=0.0;
     }
@@ -469,6 +469,7 @@ void ForceField_meam::dCfunc2(TYPE0 rij2
 }
 /*--------------------------------------------
  dCfunc2
+ checked
  --------------------------------------------*/
 void ForceField_meam::
 get_shpfcn(TYPE0* s,int latt)
@@ -618,7 +619,6 @@ TYPE0 ForceField_meam::erose(TYPE0 r,TYPE0 re,
 TYPE0 alpha,TYPE0 Ec,TYPE0 repuls,TYPE0 attrac,
 int form)
 {
-
     TYPE0 a3,astar,erose=0.0;
     
     if(r>0.0)
@@ -629,6 +629,7 @@ int form)
             a3=attrac;
         else
             a3=repuls;
+        
         if(form==1)
             erose=-Ec*(1.0+astar+(repuls/r-attrac)*
                        astar*astar*astar)*exp(-astar);
@@ -636,8 +637,10 @@ int form)
             erose=-Ec*(1.0+astar+
             a3*astar*astar*astar)*exp(-astar);
         else
+        {
             erose=-Ec*(1.0+astar+
-            a3*astar*astar*astar/(r/re))*exp(-astar);
+            a3*(astar*astar*astar)/(r/re))*exp(-astar);
+        }
     }
     
     return erose;
@@ -735,6 +738,10 @@ void ForceField_meam::force_calc
     ,jArho2_comp,iArho3_comp,jArho3_comp
     ,iArhob3_comp,jArhob3_comp;
     TYPE0 A1i,A2i,A3i,A1j,A2j,A3j,B1i,B1j;
+    TYPE0 drhodr1,drhodr2;
+    
+    TYPE0 t1i,t2i,t3i,t1j,t2j,t3j;
+    TYPE0 a1i,a2i,a3i,a1j,a2j,a3j,dt1dr1,dt1dr2,dt2dr1,dt2dr2,dt3dr1,dt3dr2;
     
 
     int* type;
@@ -748,7 +755,13 @@ void ForceField_meam::force_calc
     TYPE0* f;
     atoms->vectors[f_n].ret(f);
     
+    int kn,kk,curs;
+    TYPE0 pp;
+    TYPE0* coef;
+
+    
     int istart=0;
+    /*
     for(int iatm=0;iatm<atoms->natms;iatm++)
     {
         my_list_size=neighbor->neighbor_list_size[iatm];
@@ -761,6 +774,7 @@ void ForceField_meam::force_calc
             jatm=my_list[jn];
             if(jatm>iatm)
             {
+                fcpair[istart]=scrfcn[istart]=dscrfcn[istart]=0.0;
                 jtype=type[jatm];
                 jcomp=jatm*3;
                 jcomp_rho=jatm*rho_dim;
@@ -781,7 +795,7 @@ void ForceField_meam::force_calc
                     dsij=0.0;
                     rbound = ebound_meam[itype][jtype]*rij2;
                     
-                    int kn=0;
+                    kn=0;
                     dfcut(rnorm,fcij,dfcij);
                     dfcij*=delr_meam_inv;
                     while(kn<my_list_size && sij!=0.0)
@@ -841,6 +855,8 @@ void ForceField_meam::force_calc
                     dsij-=coef2;
                     if(sij==1.0 || sij==0.0)
                         dsij=0.0;
+                    if(sij*fcij==1.0 || sij*fcij==0.0)
+                        dsij=0.0;
                 }
                 else
                 {
@@ -854,8 +870,9 @@ void ForceField_meam::force_calc
                 scrfcn[istart]=sij;
                 dscrfcn[istart]=dsij;
                 
-                if(rij<rc_meam && sij*fcij!=0.0)
+                if(sij*fcij!=0.0)
                 {
+                    sij*=fcij;
                     ai=rij/re_meam[itype][itype]-1.0;
                     aj=rij/re_meam[jtype][jtype]-1.0;
                     ro0i=rho0_meam[itype];
@@ -916,9 +933,9 @@ void ForceField_meam::force_calc
                         }
                     }
                     
-                    rho[icomp_rho+13]+=rhoa0j;
+                    rho[icomp_rho+13]+=rhoa2j;
                     if(jatm<atoms->natms)
-                        rho[jcomp_rho+13]+=rhoa0i;
+                        rho[jcomp_rho+13]+=rhoa2i;
                     
                     
                     iArho1_comp=icomp_rho+4;
@@ -939,17 +956,16 @@ void ForceField_meam::force_calc
                     for(int i=0;i<3;i++)
                     {
                         rho[iArho1_comp++]+=delij[i]*A1j;
-                        rho[iArho3_comp++]+=delij[i]*B1j;
+                        rho[iArhob3_comp++]+=delij[i]*B1j;
                         for(int j=i;j<3;j++)
                         {
                             rho[iArho2_comp++]+=delij[i]*delij[j]*A2j;
                             for(int k=j;k<3;k++)
                             {
-                                rho[iArhob3_comp++]+=delij[i]*delij[j]*delij[k]*A3j;
+                                rho[iArho3_comp++]+=delij[i]*delij[j]*delij[k]*A3j;
                             }
                         }
                     }
-                    
                     
                     
                     if(jatm<atoms->natms)
@@ -963,13 +979,13 @@ void ForceField_meam::force_calc
                         for(int i=0;i<3;i++)
                         {
                             rho[jArho1_comp++]-=delij[i]*A1i;
-                            rho[jArho3_comp++]-=delij[i]*B1i;
+                            rho[jArhob3_comp++]-=delij[i]*B1i;
                             for(int j=i;j<3;j++)
                             {
                                 rho[jArho2_comp++]+=delij[i]*delij[j]*A2i;
                                 for(int k=j;k<3;k++)
                                 {
-                                    rho[jArhob3_comp++]-=delij[i]*delij[j]*delij[k]*A3i;
+                                    rho[jArho3_comp++]-=delij[i]*delij[j]*delij[k]*A3i;
                                 }
                             }
                         }
@@ -980,6 +996,8 @@ void ForceField_meam::force_calc
                 istart++;
             }
         }
+        
+        
         
         rho[icomp_rho+1]=0.0;
         rho[icomp_rho+2]=-rho[icomp_rho+13]*rho[icomp_rho+13]/3.0;
@@ -1047,7 +1065,412 @@ void ForceField_meam::force_calc
             
             G_gam(gam,ibar_meam[itype],gsmooth_factor,Gbar);
         }
+        
         rho_vec[iatm]=rho[icomp_rho]*G;
+        
+        if(mix_ref_t==1)
+        {
+            if(ibar_meam[itype]<=0.0)
+            {
+                Gbar=1.0;
+                dGbar=0.0;
+            }
+            else
+            {
+                get_shpfcn(s,lattice[itype][itype]);
+                gam=(rho[icomp_rho+27]*s[0]+rho[icomp_rho+28]*s[1]+rho[icomp_rho+29]*s[2])/(Z*Z);
+                dG_gam(gam,ibar_meam[itype],gsmooth_factor,Gbar,dGbar);
+            }
+            rho_bkgd=rho0_meam[itype]*Z*Gbar;
+        }
+        else
+        {
+            if(bkgd_dyn==1)
+            {
+                rho_bkgd=rho0_meam[itype]*Z;
+            }
+            else
+                rho_bkgd=rho_ref_meam[itype];
+        }
+        
+        rhob=rho_vec[iatm]/rho_bkgd;
+        denom=1.0/rho_bkgd;
+        dG_gam(rho[icomp_rho+33],ibar_meam[itype],gsmooth_factor,G,dG);
+        rho[icomp_rho+34]=(G-2.0*dG*rho[icomp_rho+33])*denom;
+        
+        if(rho[icomp_rho]!=0)
+            rho[icomp_rho+35]=(dG/rho[icomp_rho])*denom;
+        else
+            rho[icomp_rho+35]=0.0;
+        
+        if(mix_ref_t==1)
+            rho[icomp_rho+36]=rho[icomp_rho]*G*dGbar*denom/(Gbar*Z*Z);
+        else
+            rho[icomp_rho+36]=0.0;
+        
+        B=A_meam[itype]*Ec_meam[itype][itype];
+        
+        if(rhob!=0.0)
+        {
+            if(emb_lin_neg==1 && rhob<=0.0)
+            {
+                rho[icomp_rho+37]=-B;
+                nrgy_strss[0]-=B*rhob;
+            }
+            else
+            {
+                rho[icomp_rho+37]=B*(log(rhob)+1.0);
+                nrgy_strss[0]+=B*rhob*log(rhob);
+            }
+        }
+        else
+        {
+            if(emb_lin_neg==1)
+                rho[icomp_rho+37]=-B;
+            else
+                rho[icomp_rho+37]=B;
+        }
+        
+    }
+    */
+    
+    
+
+    TYPE0 a4,rij4,b;
+    
+    for(int iatm=0;iatm<atoms->natms;iatm++)
+    {
+        my_list_size=neighbor->neighbor_list_size[iatm];
+        my_list=neighbor->neighbor_list[iatm];
+        icomp=iatm*3;
+        icomp_rho=iatm*rho_dim;
+        itype=type[iatm];
+        for(int jn=0;jn<my_list_size;jn++)
+        {
+            jatm=my_list[jn];
+            if(jatm>iatm)
+            {
+                fcpair[istart]=scrfcn[istart]=dscrfcn[istart]=0.0;
+                jtype=type[jatm];
+                jcomp=jatm*3;
+                jcomp_rho=jatm*rho_dim;
+                
+                xij=x[icomp]-x[jcomp];
+                yij=x[icomp+1]-x[jcomp+1];
+                zij=x[icomp+2]-x[jcomp+2];
+                delij[0]=-xij;
+                delij[1]=-yij;
+                delij[2]=-zij;
+                rij2=xij*xij+yij*yij+zij*zij;
+                rij=sqrt(rij2);
+                
+                if(rij<rc_meam)
+                {
+                    rnorm=(rc_meam-rij)*delr_meam_inv;
+                    sij=1.0;
+                    dsij=0.0;
+                    rbound = ebound_meam[itype][jtype]*rij2;
+                    rij4=rij2*rij2;
+                    kn=0;
+                    dfcut(rnorm,fcij,dfcij);
+                    dfcij*=delr_meam_inv;
+                    while(kn<my_list_size && sij!=0.0)
+                    {
+                        katm=my_list[kn];
+                        
+                        if(katm!=jatm)
+                        {
+                            ktype=type[katm];
+                            kcomp=3*katm;
+                            
+                            xjk=x[jcomp]-x[kcomp];
+                            yjk=x[jcomp+1]-x[kcomp+1];
+                            zjk=x[jcomp+2]-x[kcomp+2];
+                            rjk2=xjk*xjk+yjk*yjk+zjk*zjk;
+                            
+                            if(rjk2<rbound)
+                            {
+                                xki=x[kcomp]-x[icomp];
+                                yki=x[kcomp+1]-x[icomp+1];
+                                zki=x[kcomp+2]-x[icomp+2];
+                                rki2=xki*xki+yki*yki+zki*zki;
+                                
+                                if(rki2<rbound)
+                                {
+                                    x_ki=rki2/rij2;
+                                    x_jk=rjk2/rij2;
+                                    a=1.0-(x_ki-x_jk)*(x_ki-x_jk);
+                                    if(a>0)
+                                    {
+                                        cikj=(2.0*(x_ki+x_jk)+a-2.0)/a;
+                                        cmax=c_max[itype][jtype][ktype];
+                                        cmin=c_min[itype][jtype][ktype];
+                                        if(cikj<cmax&&cikj>cmin)
+                                        {
+                                            cikj=(cikj-cmin)/(cmax-cmin);
+                                            dfcut(cikj,sikj,dfikj);
+                                            
+                                            if(cikj>1.0)
+                                            {
+                                                sikj=1.0;
+                                                dfikj=0.0;
+                                            }
+                                            else if (cikj<0.0)
+                                            {
+                                                sikj=0.0;
+                                                dfikj=0.0;
+                                            }
+                                            else
+                                            {
+                                                a=1.0-cikj;
+                                                a3=a*a*a;
+                                                a4=a*a*a*a;
+                                                sikj=(1.0-a4)*(1.0-a4);
+                                                dfikj=8*(1.0-a4)*a3;
+                                            }
+                                            
+                                            sij*=sikj;
+                                            coef1=dfikj/((cmax-cmin)*sikj);
+                                            dCfunc(rij2,rki2,rjk2,dcikj);
+                                            
+                                            a=rjk2-rki2;
+                                            b=rki2+rjk2;
+                                            denom=rij4-a*a;
+                                            denom *= denom;
+                                            dcikj=-4.0*(-2.0*rij2*a*a +rij4*b+a*a*b)/denom;
+                                            
+                                            dsij+=coef1*dcikj;
+                                        }
+                                        else if(cikj<cmin)
+                                        {
+                                            sij=0.0;
+                                            dsij=0.0;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        kn++;
+                    }
+                    coef1=sij*fcij;
+                    coef2=sij*dfcij/rij;
+                    dsij*=coef1;
+                    dsij-=coef2;
+                    if(sij==1.0 || sij==0.0)
+                        dsij=0.0;
+                    if(sij*fcij==1.0 || sij*fcij==0.0)
+                        dsij=0.0;
+                }
+                else
+                {
+                    fcij=0.0;
+                    dfcij=0.0;
+                    sij=0.0;
+                    dsij=0.0;
+                }
+                
+                fcpair[istart]=fcij;
+                scrfcn[istart]=sij;
+                dscrfcn[istart]=dsij;
+                
+                if(sij*fcij!=0.0)
+                {
+                    sij*=fcij;
+                    ai=rij/re_meam[itype][itype]-1.0;
+                    aj=rij/re_meam[jtype][jtype]-1.0;
+                    ro0i=rho0_meam[itype];
+                    ro0j=rho0_meam[jtype];
+                    
+                    rhoa0i=sij*ro0i*exp(-beta0_meam[itype]*ai);
+                    rhoa1i=sij*ro0i*exp(-beta1_meam[itype]*ai);
+                    rhoa2i=sij*ro0i*exp(-beta2_meam[itype]*ai);
+                    rhoa3i=sij*ro0i*exp(-beta3_meam[itype]*ai);
+                    
+                    rhoa0j=sij*ro0j*exp(-beta0_meam[jtype]*aj);
+                    rhoa1j=sij*ro0j*exp(-beta1_meam[jtype]*aj);
+                    rhoa2j=sij*ro0j*exp(-beta2_meam[jtype]*aj);
+                    rhoa3j=sij*ro0j*exp(-beta3_meam[jtype]*aj);
+                    
+                    
+                    if(ialloy==1)
+                    {
+                        rhoa1i*=t1_meam[itype];
+                        rhoa2i*=t2_meam[itype];
+                        rhoa3i*=t3_meam[itype];
+                        
+                        rhoa1j*=t1_meam[jtype];
+                        rhoa2j*=t2_meam[jtype];
+                        rhoa3j*=t3_meam[jtype];
+                    }
+                    
+                    rho[icomp_rho]+=rhoa0j;
+                    if(jatm<atoms->natms)
+                        rho[jcomp_rho]+=rhoa0i;
+                    
+                    
+                    if(ialloy!=2)
+                    {
+                        
+                        rho[icomp_rho+27]+=t1_meam[jtype]*rhoa0j;
+                        rho[icomp_rho+28]+=t2_meam[jtype]*rhoa0j;
+                        rho[icomp_rho+29]+=t3_meam[jtype]*rhoa0j;
+                        if(jatm<atoms->natms)
+                        {
+                            rho[jcomp_rho+27]+=t1_meam[itype]*rhoa0i;
+                            rho[jcomp_rho+28]+=t2_meam[itype]*rhoa0i;
+                            rho[jcomp_rho+29]+=t3_meam[itype]*rhoa0i;
+                        }
+                        
+                    }
+                    if(ialloy==1)
+                    {
+                        
+                        rho[icomp_rho+30]+=t1_meam[jtype]*t1_meam[jtype]*rhoa0j;
+                        rho[icomp_rho+31]+=t2_meam[jtype]*t2_meam[jtype]*rhoa0j;
+                        rho[icomp_rho+32]+=t3_meam[jtype]*t3_meam[jtype]*rhoa0j;
+                        if(jatm<atoms->natms)
+                        {
+                            rho[jcomp_rho+30]+=t1_meam[itype]*t1_meam[itype]*rhoa0i;
+                            rho[jcomp_rho+31]+=t2_meam[itype]*t2_meam[itype]*rhoa0i;
+                            rho[jcomp_rho+32]+=t3_meam[itype]*t3_meam[itype]*rhoa0i;
+                        }
+                    }
+                    
+                    rho[icomp_rho+13]+=rhoa2j;
+                    if(jatm<atoms->natms)
+                        rho[jcomp_rho+13]+=rhoa2i;
+                    
+                    
+                    iArho1_comp=icomp_rho+4;
+                    iArho2_comp=icomp_rho+7;
+                    iArho3_comp=icomp_rho+14;
+                    iArhob3_comp=icomp_rho+24;
+                    
+                    jArho1_comp=jcomp_rho+4;
+                    jArho2_comp=jcomp_rho+7;
+                    jArho3_comp=jcomp_rho+14;
+                    jArhob3_comp=jcomp_rho+24;
+                    
+                    A1j=rhoa1j/rij;
+                    B1j=rhoa3j/rij;
+                    A2j=rhoa2j/rij2;
+                    A3j=rhoa3j/(rij2*rij);
+                    
+                    for(int i=0;i<3;i++)
+                    {
+                        rho[iArho1_comp++]+=delij[i]*A1j;
+                        rho[iArhob3_comp++]+=delij[i]*B1j;
+                        for(int j=i;j<3;j++)
+                        {
+                            rho[iArho2_comp++]+=delij[i]*delij[j]*A2j;
+                            for(int k=j;k<3;k++)
+                            {
+                                rho[iArho3_comp++]+=delij[i]*delij[j]*delij[k]*A3j;
+                            }
+                        }
+                    }
+                    
+                    
+                    if(jatm<atoms->natms)
+                    {
+                        
+                        A1i=rhoa1i/rij;
+                        B1i=rhoa3i/rij;
+                        A2i=rhoa2i/rij2;
+                        A3i=rhoa3i/(rij2*rij);
+                        
+                        for(int i=0;i<3;i++)
+                        {
+                            rho[jArho1_comp++]-=delij[i]*A1i;
+                            rho[jArhob3_comp++]-=delij[i]*B1i;
+                            for(int j=i;j<3;j++)
+                            {
+                                rho[jArho2_comp++]+=delij[i]*delij[j]*A2i;
+                                for(int k=j;k<3;k++)
+                                {
+                                    rho[jArho3_comp++]-=delij[i]*delij[j]*delij[k]*A3i;
+                                }
+                            }
+                        }
+                    }
+                    
+                }
+                
+                istart++;
+            }
+        }
+        
+        
+        
+        rho[icomp_rho+1]=0.0;
+        rho[icomp_rho+2]=-rho[icomp_rho+13]*rho[icomp_rho+13]/3.0;
+        rho[icomp_rho+3]=0.0;
+        for(int i=0;i<3;i++)
+        {
+            rho[icomp_rho+1]+=rho[icomp_rho+4+i]*rho[icomp_rho+4+i];
+            rho[icomp_rho+3]-=0.6*rho[icomp_rho+24+i]*rho[icomp_rho+24+i];
+        }
+        
+        for(int i=0;i<6;i++)
+        {
+            rho[icomp_rho+2]+=v2d[i]*rho[icomp_rho+7+i]*rho[icomp_rho+7+i];
+        }
+        
+        for(int i=0;i<10;i++)
+        {
+            rho[icomp_rho+3]+=v3d[i]*rho[icomp_rho+14+i]*rho[icomp_rho+14+i];
+        }
+        
+        if(rho[icomp_rho]>0.0)
+        {
+            if(ialloy==1)
+            {
+                rho[icomp_rho+27]=rho[icomp_rho+27]/rho[icomp_rho+30];
+                rho[icomp_rho+28]=rho[icomp_rho+28]/rho[icomp_rho+31];
+                rho[icomp_rho+29]=rho[icomp_rho+29]/rho[icomp_rho+32];
+            }
+            else if(ialloy==2)
+            {
+                rho[icomp_rho+27]=t1_meam[itype];
+                rho[icomp_rho+28]=t2_meam[itype];
+                rho[icomp_rho+29]=t3_meam[itype];
+            }
+            else
+            {
+                rho[icomp_rho+27]=rho[icomp_rho+27]/rho[icomp_rho];
+                rho[icomp_rho+28]=rho[icomp_rho+28]/rho[icomp_rho];
+                rho[icomp_rho+29]=rho[icomp_rho+29]/rho[icomp_rho];
+            }
+        }
+        
+        
+        rho[icomp_rho+33]=rho[icomp_rho+27]*rho[icomp_rho+1]
+        +rho[icomp_rho+28]*rho[icomp_rho+2]+rho[icomp_rho+29]*rho[icomp_rho+3];
+        
+        if(rho[icomp_rho]>0.0)
+            rho[icomp_rho+33]=rho[icomp_rho+33]/(rho[icomp_rho]*rho[icomp_rho]);
+        
+        
+        
+        Z=Z_meam[itype];
+        
+        G_gam(rho[icomp_rho+33],ibar_meam[itype],gsmooth_factor,G);
+        
+        if(ibar_meam[itype]<=0)
+            Gbar=1.0;
+        else
+        {
+            get_shpfcn(s,lattice[itype][itype]);
+            if(mix_ref_t==1)
+                gam=(rho[icomp_rho+27]*s[0]+rho[icomp_rho+28]*s[1]+rho[icomp_rho+29]*s[2])/(Z*Z);
+            else
+                gam=(t1_meam[itype]*s[0]+t2_meam[itype]*s[1]+t3_meam[itype]*s[2])/(Z*Z);
+            
+            G_gam(gam,ibar_meam[itype],gsmooth_factor,Gbar);
+        }
+        
+        rho_vec[iatm]=rho[icomp_rho]*G;
+        
         if(mix_ref_t==1)
         {
             if(ibar_meam[itype]<=0.0)
@@ -1151,10 +1574,30 @@ void ForceField_meam::force_calc
                     rij=sqrt(rij2);
                     if(rij<rc_meam)
                     {
-                        compute_phi_dphi(rij,itype,jtype,phi,phip);
+                        sij=scrfcn[istart]*fcpair[istart];
+                        curs=COMP(itype,jtype);
+                        pp=rij*dr_inv;
+                        kk=static_cast<int>(pp);
+                        kk=MIN(kk,nr-2);
+                        pp-=static_cast<TYPE0>(kk);
+                        pp=MIN(pp,1.0);
+                        coef=phirar[curs][kk];
+                        phi=((coef[3]*pp+coef[2])*pp+coef[1])*pp+coef[0];
+                        phip=(coef[6]*pp+coef[5])*pp+coef[4];
+
+                        if(jatm<atoms->natms)
+                        {
+                            nrgy_strss[0]+=phi*sij;
+                        }
+                        else
+                        {
+                            nrgy_strss[0]+=0.5*phi*sij;
+                        }
+
                         /*
                          energy sij*phi
                          */
+                        //printf("%20.15lf\n",phi);
                         recip=1.0/rij;
                         re_meam_inv_i=1.0/re_meam[itype][itype];
                         ai=rij*re_meam_inv_i-1.0;
@@ -1254,16 +1697,8 @@ void ForceField_meam::force_calc
                         }
                         
                         
-                        sij=scrfcn[istart]*fcpair[istart];
                         
-                        if(jatm<atoms->natms)
-                        {
-                            nrgy_strss[0]+=phi*sij;
-                        }
-                        else
-                        {
-                            nrgy_strss[0]+=0.5*phi*sij;
-                        }
+                        
                         
                         
                         //rho0 terms
@@ -1297,7 +1732,7 @@ void ForceField_meam::force_calc
                             for(int j=0;j<3;j++)
                             {
                                 drho2drm1[i]+=rho[icomp_rho+7+vind2d[i][j]]*delij[j];
-                                drho2drm1[i]-=rho[jcomp_rho+7+vind2d[i][j]]*delij[j];
+                                drho2drm2[i]-=rho[jcomp_rho+7+vind2d[i][j]]*delij[j];
                             }
                             drho2drm1[i]*=a2*rhoa2j;
                             drho2drm2[i]*=-a2*rhoa2i;
@@ -1306,8 +1741,8 @@ void ForceField_meam::force_calc
                         rij3=rij*rij2;
                         a3=2.0*sij/rij3;
                         a3a=1.2*sij/rij;
-                        drho3dr1 = a3*(drhoa3j - 3*rhoa3j/rij)*arg1i3- a3a*(drhoa3j - rhoa3j/rij)*arg3i3;
-                        drho3dr2 = a3*(drhoa3i - 3*rhoa3i/rij)*arg1j3- a3a*(drhoa3i - rhoa3i/rij)*arg3j3;
+                        drho3dr1 = a3*(drhoa3j-3.0*rhoa3j/rij)*arg1i3- a3a*(drhoa3j - rhoa3j/rij)*arg3i3;
+                        drho3dr2 = a3*(drhoa3i-3.0*rhoa3i/rij)*arg1j3- a3a*(drhoa3i - rhoa3i/rij)*arg3j3;
                         a3 = 6.0*sij/rij3;
                         a3a = 1.2*sij/rij;
                         
@@ -1327,11 +1762,13 @@ void ForceField_meam::force_calc
                                     nv2_comp++;
                                 }
                             }
-                            drho3drm1[i]+=(a3*drho3drm1[i]-a3a*rho[icomp_rho+24+i])*rhoa3j;
-                            drho3drm2[i]-=(a3*drho3drm1[i]-a3a*rho[jcomp_rho+24+i])*rhoa3i;
+                            //drho3drm1[i]+=(a3*drho3drm1[i]-a3a*rho[icomp_rho+24+i])*rhoa3j;
+                            //drho3drm2[i]-=(a3*drho3drm2[i]-a3a*rho[jcomp_rho+24+i])*rhoa3i;
+                            drho3drm1[i]=(a3*drho3drm1[i]-a3a*rho[icomp_rho+24+i])*rhoa3j;
+                            drho3drm2[i]=-(a3*drho3drm2[i]-a3a*rho[jcomp_rho+24+i])*rhoa3i;
                         }
                         
-                        TYPE0 t1i,t2i,t3i,t1j,t2j,t3j;
+                        
                         t1i=rho[icomp_rho+27];
                         t2i=rho[icomp_rho+28];
                         t3i=rho[icomp_rho+29];
@@ -1339,7 +1776,7 @@ void ForceField_meam::force_calc
                         t2j=rho[jcomp_rho+28];
                         t3j=rho[jcomp_rho+29];
                         
-                        TYPE0 a1i,a2i,a3i,a1j,a2j,a3j,dt1dr1,dt1dr2,dt2dr1,dt2dr2,dt3dr1,dt3dr2;
+                        
                         
                         if(ialloy==1)
                         {
@@ -1365,10 +1802,10 @@ void ForceField_meam::force_calc
                             
                             dt1dr1=a1i*(t1_meam[jtype]-t1i*t1_meam[jtype]*t1_meam[jtype]);
                             dt1dr2=a1j*(t1_meam[itype]-t1j*t1_meam[itype]*t1_meam[itype]);
-                            dt2dr1=a2i*(t2_meam[jtype]-t1i*t2_meam[jtype]*t2_meam[jtype]);
-                            dt2dr2=a2j*(t2_meam[itype]-t1j*t2_meam[itype]*t2_meam[itype]);
-                            dt3dr1=a3i*(t3_meam[jtype]-t1i*t3_meam[jtype]*t3_meam[jtype]);
-                            dt3dr2=a3j*(t3_meam[itype]-t1j*t3_meam[itype]*t3_meam[itype]);
+                            dt2dr1=a2i*(t2_meam[jtype]-t2i*t2_meam[jtype]*t2_meam[jtype]);
+                            dt2dr2=a2j*(t2_meam[itype]-t2j*t2_meam[itype]*t2_meam[itype]);
+                            dt3dr1=a3i*(t3_meam[jtype]-t3i*t3_meam[jtype]*t3_meam[jtype]);
+                            dt3dr2=a3j*(t3_meam[itype]-t3j*t3_meam[itype]*t3_meam[itype]);
                         }
                         else if(ialloy==2)
                         {
@@ -1389,18 +1826,18 @@ void ForceField_meam::force_calc
                                 aj=drhoa0i*sij/rho[jcomp_rho];
                             
                             dt1dr1=ai*(t1_meam[jtype]-t1i);
-                            dt1dr2 = aj*(t1_meam[itype]-t1j);
-                            dt2dr1 = ai*(t2_meam[jtype]-t2i);
-                            dt2dr2 = aj*(t2_meam[itype]-t2j);
-                            dt3dr1 = ai*(t3_meam[jtype]-t3i);
-                            dt3dr2 = aj*(t3_meam[itype]-t3j);
+                            dt1dr2=aj*(t1_meam[itype]-t1j);
+                            dt2dr1=ai*(t2_meam[jtype]-t2i);
+                            dt2dr2=aj*(t2_meam[itype]-t2j);
+                            dt3dr1=ai*(t3_meam[jtype]-t3i);
+                            dt3dr2=aj*(t3_meam[itype]-t3j);
                             
                         }
                         
-                        get_shpfcn(si,lattice[itype][jtype]);
-                        get_shpfcn(sj,lattice[jtype][itype]);
+                        get_shpfcn(si,lattice[itype][itype]);
+                        get_shpfcn(sj,lattice[jtype][jtype]);
                         
-                        TYPE0 drhodr1,drhodr2;
+                        
                         drhodr1=rho[icomp_rho+34]*drho0dr1+rho[icomp_rho+35]
                         *(dt1dr1*rho[icomp_rho+1]+t1i*drho1dr1
                           +dt2dr1*rho[icomp_rho+2]+t2i*drho2dr1
@@ -1453,17 +1890,17 @@ void ForceField_meam::force_calc
                                 a3i=0.0;
                                 a3j=0.0;
                                 if(rho[icomp_rho+30]!=0.0)
-                                    a1i=drhoa0j*sij/rho[icomp_rho+30];
+                                    a1i=drhoa0j/rho[icomp_rho+30];
                                 if(rho[jcomp_rho+30]!=0.0)
-                                    a1j=drhoa0i*sij/rho[jcomp_rho+30];
+                                    a1j=drhoa0i/rho[jcomp_rho+30];
                                 if(rho[icomp_rho+31]!=0.0)
-                                    a2i=drhoa0j*sij/rho[icomp_rho+31];
+                                    a2i=drhoa0j/rho[icomp_rho+31];
                                 if(rho[jcomp_rho+31]!=0.0)
-                                    a2j=drhoa0i*sij/rho[jcomp_rho+31];
+                                    a2j=drhoa0i/rho[jcomp_rho+31];
                                 if(rho[icomp_rho+32]!=0.0)
-                                    a3i=drhoa0j*sij/rho[icomp_rho+32];
+                                    a3i=drhoa0j/rho[icomp_rho+32];
                                 if(rho[jcomp_rho+32]!=0.0)
-                                    a3j=drhoa0i*sij/rho[jcomp_rho+32];
+                                    a3j=drhoa0i/rho[jcomp_rho+32];
                                 
                                 dt1ds1=a1i*(t1_meam[jtype]-t1i*t1_meam[jtype]*t1_meam[jtype]);
                                 dt1ds2=a1j*(t1_meam[itype]-t1j*t1_meam[itype]*t1_meam[itype]);
@@ -1486,10 +1923,10 @@ void ForceField_meam::force_calc
                             {
                                 ai=0.0;
                                 if(rho[icomp_rho]!=0.0)
-                                    ai=drhoa0j/rho[icomp_rho];
+                                    ai=rhoa0j/rho[icomp_rho];
                                 aj=0.0;
                                 if(rho[jcomp_rho]!=0.0)
-                                    aj=drhoa0i/rho[jcomp_rho];
+                                    aj=rhoa0i/rho[jcomp_rho];
                                 
                                 dt1ds1=ai*(t1_meam[jtype]-t1i);
                                 dt1ds2=aj*(t1_meam[itype]-t1j);
@@ -1707,7 +2144,7 @@ void ForceField_meam::force_calc
  --------------------------------------------*/
 TYPE0 ForceField_meam::energy_calc()
 {
-    reset();
+
     TYPE0 en=0.0;
     TYPE0 en_tot=0.0;
     
@@ -1718,8 +2155,10 @@ TYPE0 ForceField_meam::energy_calc()
     
     TYPE0 xij,xjk,xki,yij,yjk,yki,zij,zjk,zki;
     TYPE0 rij2,rjk2,rki2;
-    TYPE0 rij,coef1,coef2;
+    TYPE0 rij;
+    
     int icomp,jcomp,kcomp,itype,jtype,ktype;
+    TYPE0 coef1,coef2;
     int icomp_rho,jcomp_rho;
     
     
@@ -1728,12 +2167,13 @@ TYPE0 ForceField_meam::energy_calc()
     TYPE0 cikj,sikj=0.0,cmax,cmin,dfikj,dcikj;
     TYPE0 ai,aj,ro0i,ro0j,rhoa0i,rhoa0j,rhoa1i,rhoa1j
     ,rhoa2i,rhoa2j,rhoa3i,rhoa3j;
-    TYPE0 Z,phi;
+    TYPE0 Z;
     TYPE0 G,dG,Gbar,dGbar=0.0,gam,rho_bkgd,rhob,denom,B;
     int iArho1_comp,jArho1_comp,iArho2_comp
     ,jArho2_comp,iArho3_comp,jArho3_comp
     ,iArhob3_comp,jArhob3_comp;
     TYPE0 A1i,A2i,A3i,A1j,A2j,A3j,B1i,B1j;
+    
     
     int* type;
     atoms->vectors[type_n].ret(type);
@@ -1744,7 +2184,17 @@ TYPE0 ForceField_meam::energy_calc()
     TYPE0* rho_vec;
     atoms->vectors[rho_vec_n].ret(rho_vec);
     
-    int istart=0;
+    
+    for(int i=0;i<atoms->natms;i++)
+        rho_vec[i]=0.0;
+    for(int i=0;i<(atoms->natms+atoms->natms_ph)*rho_dim;i++)
+        rho[i]=0.0;
+    
+    TYPE0 phi;
+    int kn,kk,curs;
+    TYPE0 pp;
+    TYPE0* coef;
+
     for(int iatm=0;iatm<atoms->natms;iatm++)
     {
         my_list_size=neighbor->neighbor_list_size[iatm];
@@ -1757,6 +2207,7 @@ TYPE0 ForceField_meam::energy_calc()
             jatm=my_list[jn];
             if(jatm>iatm)
             {
+                fcij=sij=dsij=0.0;
                 jtype=type[jatm];
                 jcomp=jatm*3;
                 jcomp_rho=jatm*rho_dim;
@@ -1777,10 +2228,9 @@ TYPE0 ForceField_meam::energy_calc()
                     dsij=0.0;
                     rbound = ebound_meam[itype][jtype]*rij2;
                     
-                    int kn=0;
+                    kn=0;
                     dfcut(rnorm,fcij,dfcij);
                     dfcij*=delr_meam_inv;
-                    
                     while(kn<my_list_size && sij!=0.0)
                     {
                         katm=my_list[kn];
@@ -1838,6 +2288,8 @@ TYPE0 ForceField_meam::energy_calc()
                     dsij-=coef2;
                     if(sij==1.0 || sij==0.0)
                         dsij=0.0;
+                    if(sij*fcij==1.0 || sij*fcij==0.0)
+                        dsij=0.0;
                 }
                 else
                 {
@@ -1847,21 +2299,26 @@ TYPE0 ForceField_meam::energy_calc()
                     dsij=0.0;
                 }
                 
-                fcpair[istart]=fcij;
-                scrfcn[istart]=sij;
-                dscrfcn[istart]=dsij;
                 
-                if(rij<rc_meam && sij*fcij!=0.0)
+                
+                if(sij*fcij!=0.0)
                 {
+                    sij*=fcij;
                     
-                    compute_phi(rij,itype,jtype,phi);
+                    curs=COMP(itype,jtype);
+                    pp=rij*dr_inv;
+                    kk=static_cast<int>(pp);
+                    kk=MIN(kk,nr-2);
+                    pp-=static_cast<TYPE0>(kk);
+                    pp=MIN(pp,1.0);
+                    coef=phirar[curs][kk];
+                    phi=((coef[3]*pp+coef[2])*pp+coef[1])*pp+coef[0];
+                    
                     
                     if(jatm<atoms->natms)
-                        en+=phi*sij*fcij;
+                        en+=phi*sij;
                     else
-                        en+=0.5*phi*sij*fcij;
-                    
-                    
+                        en+=0.5*phi*sij;
                     
                     ai=rij/re_meam[itype][itype]-1.0;
                     aj=rij/re_meam[jtype][jtype]-1.0;
@@ -1923,9 +2380,9 @@ TYPE0 ForceField_meam::energy_calc()
                         }
                     }
                     
-                    rho[icomp_rho+13]+=rhoa0j;
+                    rho[icomp_rho+13]+=rhoa2j;
                     if(jatm<atoms->natms)
-                        rho[jcomp_rho+13]+=rhoa0i;
+                        rho[jcomp_rho+13]+=rhoa2i;
                     
                     
                     iArho1_comp=icomp_rho+4;
@@ -1946,17 +2403,16 @@ TYPE0 ForceField_meam::energy_calc()
                     for(int i=0;i<3;i++)
                     {
                         rho[iArho1_comp++]+=delij[i]*A1j;
-                        rho[iArho3_comp++]+=delij[i]*B1j;
+                        rho[iArhob3_comp++]+=delij[i]*B1j;
                         for(int j=i;j<3;j++)
                         {
                             rho[iArho2_comp++]+=delij[i]*delij[j]*A2j;
                             for(int k=j;k<3;k++)
                             {
-                                rho[iArhob3_comp++]+=delij[i]*delij[j]*delij[k]*A3j;
+                                rho[iArho3_comp++]+=delij[i]*delij[j]*delij[k]*A3j;
                             }
                         }
                     }
-                    
                     
                     
                     if(jatm<atoms->natms)
@@ -1970,13 +2426,13 @@ TYPE0 ForceField_meam::energy_calc()
                         for(int i=0;i<3;i++)
                         {
                             rho[jArho1_comp++]-=delij[i]*A1i;
-                            rho[jArho3_comp++]-=delij[i]*B1i;
+                            rho[jArhob3_comp++]-=delij[i]*B1i;
                             for(int j=i;j<3;j++)
                             {
                                 rho[jArho2_comp++]+=delij[i]*delij[j]*A2i;
                                 for(int k=j;k<3;k++)
                                 {
-                                    rho[jArhob3_comp++]-=delij[i]*delij[j]*delij[k]*A3i;
+                                    rho[jArho3_comp++]-=delij[i]*delij[j]*delij[k]*A3i;
                                 }
                             }
                         }
@@ -1984,9 +2440,10 @@ TYPE0 ForceField_meam::energy_calc()
                     
                 }
                 
-                istart++;
             }
         }
+        
+        
         
         rho[icomp_rho+1]=0.0;
         rho[icomp_rho+2]=-rho[icomp_rho+13]*rho[icomp_rho+13]/3.0;
@@ -2054,7 +2511,9 @@ TYPE0 ForceField_meam::energy_calc()
             
             G_gam(gam,ibar_meam[itype],gsmooth_factor,Gbar);
         }
+        
         rho_vec[iatm]=rho[icomp_rho]*G;
+        
         if(mix_ref_t==1)
         {
             if(ibar_meam[itype]<=0.0)
@@ -2097,9 +2556,6 @@ TYPE0 ForceField_meam::energy_calc()
         
         B=A_meam[itype]*Ec_meam[itype][itype];
         
-        
-
-        
         if(rhob!=0.0)
         {
             if(emb_lin_neg==1 && rhob<=0.0)
@@ -2122,8 +2578,10 @@ TYPE0 ForceField_meam::energy_calc()
         }
         
     }
-
+    
+    
     MPI_Allreduce(&en,&en_tot,1,MPI_TYPE0,MPI_SUM,world);
+    //cout << en_tot << endl;
     return en_tot;
 }
 /*--------------------------------------------
@@ -2134,33 +2592,31 @@ void ForceField_meam::coef(int narg,char** args)
     if(narg!=3)
         error->abort("wrong coeff command for MEAM FF");
     read_global(args[1]);
-
     
     read_local(args[2]);
     
+    int no_types=atom_types->no_types;
+    for(int itype=0;itype<no_types;itype++)
+        t1_meam[itype]+=static_cast<TYPE0>(augt1)*0.6*t3_meam[itype];
+    
     alloy_params();
     compute_reference_density();
+    dr=1.1*rc_meam/static_cast<TYPE0>(nr);
+    dr_inv=1.0/dr;
     compute_pair_meam();
     
-    
     /*
-    int no_types=atom_types->no_types;
-    int curs;
-    for(int itype=0;itype<no_types;itype++)
-    {
-        for(int jtype=itype;jtype<no_types;jtype++)
-        {
-            curs=COMP(itype,jtype);
-            
-            for(int i=0;i<nr;i++)
-            {
-                printf("%lf %lf %lf %lf %lf %lf %lf\n",phirar[curs][i][0],phirar[curs][i][1],phirar[curs][i][2],phirar[curs][i][3],phirar[curs][i][4],phirar[curs][i][5],phirar[curs][i][6]);
-                
-                
-            }
-            printf("\n\n\n cccccccc\n\n\n");
-        }
-    }
+    for(int i=0;i<nr;i++)
+        printf("%20.16lf \n",phirar[0][i][0]);
+    */
+/*
+    printf("eeee  %26.20lf\n",zbl(2.1,ielt_meam[0],ielt_meam[0]));
+    printf("eeee  %26.20lf\n",zbl(2.1,ielt_meam[1],ielt_meam[0]));
+    printf("eeee  %26.20lf\n",zbl(2.1,ielt_meam[1],ielt_meam[1]));
+*/
+    /*
+    for(int i=0;i<nr;i++)
+        printf("%26.20lf\n",phirar[0][i][0]);
     */
 }
 /*--------------------------------------------
@@ -2384,7 +2840,7 @@ void ForceField_meam::read_global(char* file_name)
     bkgd_dyn=0;
     augt1=1;
     erose_form=0;
-    delr_meam_inv=10;
+    delr_meam_inv=10.0;
     delr_meam=0.1;
     rc_meam=4.0;
     gsmooth_factor=99.0;
@@ -2728,7 +3184,7 @@ void ForceField_meam::read_local(char* file_name)
         fclose(fp);
 }
 /*--------------------------------------------
-
+ checked but check again
  --------------------------------------------*/
 void ForceField_meam::alloy_params()
 {
@@ -2739,7 +3195,7 @@ void ForceField_meam::alloy_params()
         for(int j=0;j<no_types;j++)
         {
             
-            if(Ec_meam[i][j]!=0.0)
+            if(Ec_meam[i][j]==0.0)
             {
                 if(lattice[i][j]==L12)
                 {
@@ -2768,9 +3224,15 @@ void ForceField_meam::alloy_params()
             }
             
             if(alpha_meam[i][j]==0.0)
+            {
                 alpha_meam[i][j]=0.5*(alpha_meam[i][i]+alpha_meam[j][j]);
+                alpha_meam[j][i]=alpha_meam[i][j];
+            }
             if(re_meam[i][j]==0.0)
+            {
                 re_meam[i][j]=0.5*(re_meam[i][i]+re_meam[j][j]);
+                re_meam[j][i]=re_meam[i][j];
+            }
         }
     }
     
@@ -2790,8 +3252,6 @@ void ForceField_meam::compute_pair_meam()
     int no_types=atom_types->no_types;
     int curs;
     TYPE0 Z1,Z2,r,rarat,C,s111,s112,s221,S11,S22;
-    dr=1.1*rc_meam/static_cast<TYPE0>(nr);
-    dr_inv=1.0/dr;
     TYPE0 phiaa=0.0,phibb=0.0,arat,scrn,scrn2;
     int nmax=10;
     TYPE0 tmp0,tmp1,tmp2,tmp3,astar,phizbl,frac;
@@ -2826,7 +3286,6 @@ void ForceField_meam::compute_pair_meam()
                         tmp1=rarat;
                         tmp2=-Z2*scrn/Z1;
                         tmp3=arat;
-                        phiaa=0.0;
                         if(scrn>0.0)
                         {
                             for(int i=0;i<nmax;i++)
@@ -2845,7 +3304,6 @@ void ForceField_meam::compute_pair_meam()
                         tmp1=rarat;
                         tmp2=-Z2*scrn/Z1;
                         tmp3=arat;
-                        phibb=0.0;
                         if(scrn>0.0)
                         {
                             for(int i=0;i<nmax;i++)
@@ -2890,7 +3348,7 @@ void ForceField_meam::compute_pair_meam()
                         {
                             tmp0*=tmp2;
                             tmp1*=tmp3;
-                            phirar[curs][in][0]+=tmp0*phi_meam(tmp1,itype,itype);
+                            phirar[curs][in][0]+=tmp0*phi_meam(tmp1,itype,jtype);
                             
                         }
                     }
@@ -2929,7 +3387,7 @@ void ForceField_meam::compute_pair_meam()
             for(int in=0;in<nr-1;in++)
             {
                 phirar[curs][in][2]=3.0*(phirar[curs][in+1][0]-phirar[curs][in][0])
-                -2.0*phirar[curs][in][0]-phirar[curs][in+1][0];
+                -2.0*phirar[curs][in][1]-phirar[curs][in+1][1];
                 phirar[curs][in][3]=phirar[curs][in][1]+phirar[curs][in+1][1]
                 -2.0*(phirar[curs][in+1][0]-phirar[curs][in][0]);
             }
@@ -2947,7 +3405,7 @@ void ForceField_meam::compute_pair_meam()
     
 }
 /*--------------------------------------------
- 
+ checked
  --------------------------------------------*/
 void ForceField_meam::get_sijk(TYPE0 C,int i,
 int j,int k,TYPE0& sijk)
@@ -2957,7 +3415,7 @@ int j,int k,TYPE0& sijk)
     fcut(x,sijk);
 }
 /*--------------------------------------------
- 
+ checked
  --------------------------------------------*/
 void ForceField_meam::get_dens_ref(TYPE0 r,
 int a,int b,TYPE0& rho01,TYPE0& rho11,
@@ -3030,10 +3488,10 @@ TYPE0& rho12,TYPE0& rho22,TYPE0& rho32)
         rho02=rhoa01;
         rho11=s[0]*rhoa12*rhoa12;
         rho12=s[0]*rhoa11*rhoa11;
-        rho21=s[0]*rhoa22*rhoa22;
-        rho22=s[0]*rhoa21*rhoa21;
-        rho31=s[0]*rhoa32*rhoa32;
-        rho32=s[0]*rhoa31*rhoa31;
+        rho21=s[1]*rhoa22*rhoa22;
+        rho22=s[1]*rhoa21*rhoa21;
+        rho31=s[2]*rhoa32*rhoa32;
+        rho32=s[2]*rhoa31*rhoa31;
     }
     else if(lat==C11)
     {
@@ -3052,7 +3510,7 @@ TYPE0& rho12,TYPE0& rho22,TYPE0& rho32)
         rho02=12.0*rhoa01;
         if(ialloy==1)
         {
-            rho21=(8.0/3.0)*(rho21*t2_meam[a]-rho22*t2_meam[b])*(rho21*t2_meam[a]-rho22*t2_meam[b]);
+            rho21=(8.0/3.0)*(rhoa21*t2_meam[a]-rhoa22*t2_meam[b])*(rhoa21*t2_meam[a]-rhoa22*t2_meam[b]);
             denom=8.0*rhoa01*t2_meam[a]*t2_meam[a]+4.0*rhoa02*t2_meam[b]*t2_meam[b];
             if(denom>0.0)
                 rho21*=rho01/denom;
@@ -3105,7 +3563,7 @@ TYPE0& rho12,TYPE0& rho22,TYPE0& rho32)
     delete [] s;
 }
 /*--------------------------------------------
- 
+ checked
  --------------------------------------------*/
 void ForceField_meam::get_tavref(TYPE0& t11av,
 TYPE0& t21av,TYPE0& t31av,TYPE0& t12av,
@@ -3133,12 +3591,12 @@ TYPE0 t31,TYPE0 t12,TYPE0 t22,TYPE0 t32,TYPE0 r
            latt==B2
            )
         {
-            t11av=t11;
-            t21av=t21;
-            t31av=t31;
-            t12av=t12;
-            t22av=t22;
-            t32av=t32;
+            t11av=t12;
+            t21av=t22;
+            t31av=t32;
+            t12av=t11;
+            t22av=t21;
+            t32av=t31;
         }
         else
         {
@@ -3163,7 +3621,7 @@ TYPE0 t31,TYPE0 t12,TYPE0 t22,TYPE0 t32,TYPE0 r
     }
 }
 /*--------------------------------------------
- 
+ checked
  --------------------------------------------*/
 TYPE0 ForceField_meam::phi_meam(TYPE0 r,int a
 ,int b)
@@ -3220,20 +3678,20 @@ TYPE0 ForceField_meam::phi_meam(TYPE0 r,int a
     {
         if(lattice[a][a]==DIAMOND)
         {
-            rhobar1=(0.25*Z12*Z12*(rho02+rho01)*(rho02+rho01)+
+            rhobar1=0.25*Z12*Z12*(rho02+rho01)*(rho02+rho01)+
                      t11av*(rho12-rho11)*(rho12-rho11)+
                      t21av/6.0*(rho22+rho21)*(rho22+rho21)+
-                     3.025*t31av*(rho32-rho31)*(rho32-rho31));
+                     3.025*t31av*(rho32-rho31)*(rho32-rho31);
             rhobar1=sqrt(rhobar1);
             rhobar2=Z12*rho01*Z12*rho01+2.0/3.0*t21av*rho21*rho21;
             rhobar2=sqrt(rhobar2);
         }
         else
         {
-            rhobar2=(0.25*Z12*Z12*(rho01+rho02)*(rho01+rho02)+
+            rhobar2=0.25*Z12*Z12*(rho01+rho02)*(rho01+rho02)+
                      t12av*(rho12-rho11)*(rho12-rho11)+
                      t22av/6.0*(rho22+rho21)*(rho22+rho21)+
-                     3.025*t32av*(rho32-rho31)*(rho32-rho31));
+                     3.025*t32av*(rho32-rho31)*(rho32-rho31);
             rhobar2=sqrt(rhobar2);
             rhobar1=Z12*rho02*Z12*rho02+2.0/3.0*t22av*rho22*rho22;
             rhobar1=sqrt(rhobar1);
@@ -3268,7 +3726,7 @@ TYPE0 ForceField_meam::phi_meam(TYPE0 r,int a
                 TYPE0* s2;
                 CREATE1D(s2,3);
                 get_shpfcn(s2,lattice[b][b]);
-                Gam1=(s2[0]*t12av+s2[1]*t22av+s2[2]*t32av)/(Z2*Z2);
+                Gam2=(s2[0]*t12av+s2[1]*t22av+s2[2]*t32av)/(Z2*Z2);
                 G_gam(Gam2,ibar_meam[b],gsmooth_factor,G2);
                 delete [] s2;
             }
@@ -3315,7 +3773,7 @@ TYPE0 ForceField_meam::phi_meam(TYPE0 r,int a
         if(emb_lin_neg==1 && rhobar1<=0.0)
             F1=-A_meam[a]*Ec_meam[a][a]*rhobar1;
         else
-            F1=A_meam[a]*Ec_meam[a][a]*rhobar1;
+            F1=A_meam[a]*Ec_meam[a][a]*rhobar1*log(rhobar1);
     }
     if(rhobar2==0.0)
         F2=0.0;
@@ -3324,7 +3782,7 @@ TYPE0 ForceField_meam::phi_meam(TYPE0 r,int a
         if(emb_lin_neg==1 && rhobar2<=0.0)
             F2=-A_meam[b]*Ec_meam[b][b]*rhobar2;
         else
-            F2=A_meam[b]*Ec_meam[b][b]*rhobar2;
+            F2=A_meam[b]*Ec_meam[b][b]*rhobar2*log(rhobar2);
     }
     
     Eu=erose(r,re_meam[a][b],alpha_meam[a][b],Ec_meam[a][b]
@@ -3355,9 +3813,10 @@ TYPE0 ForceField_meam::phi_meam(TYPE0 r,int a
         int nmax=10;
         if(scrn>0.0)
         {
-            TYPE0 tmp0=1.0,tmp1=1.0;
+            TYPE0 tmp0=1.0;
+            TYPE0 tmp1=r;
             TYPE0 tmp2=-Z2nn*scrn/Z1nn;
-            TYPE0 tmp3=r*arat;
+            TYPE0 tmp3=arat;
             for(int i=0;i<nmax;i++)
             {
                 tmp0*=tmp2;
@@ -3377,7 +3836,7 @@ TYPE0 ForceField_meam::phi_meam(TYPE0 r,int a
     return phi_m;
 }
 /*--------------------------------------------
- 
+ checked
  --------------------------------------------*/
 void ForceField_meam::compute_reference_density()
 {

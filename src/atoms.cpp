@@ -1746,6 +1746,28 @@ void Atoms::x_unpack(char*& buff,int* vec_list
     natms_ph+=atm_list_size;
 }
 /*--------------------------------------------
+ 
+ --------------------------------------------*/
+void Atoms::store_0()
+{
+    TYPE0* x;
+    vectors[0].ret(x);
+    TYPE0* x_0;
+    vectors[1].ret(x_0);
+    
+    int x_dim=vectors[0].dim;
+    int x_0_dim=vectors[1].dim;
+    int x_comp=0;
+    int x_0_comp=0;
+    for(int i=0;i<natms;i++)
+    {
+        for(int idim=0;idim<dimension;idim++)
+            x_0[x_0_comp+idim]=x[x_comp+idim];
+        x_comp+=x_dim;
+        x_0_comp+=x_0_dim;
+    }
+}
+/*--------------------------------------------
  please note that if the box's size changes,
  this function assumes the you have already 
  inversed the H matrix and calculated the B
@@ -4524,6 +4546,7 @@ void AVec::change_dimension(int d)
         
         delete [] vec_0;
         vec_0=tmp_vec_0;
+        byte_size=sizeof(char)*d;
     }
     else if(type==1)
     {
@@ -4535,6 +4558,7 @@ void AVec::change_dimension(int d)
         
         delete [] vec_1;
         vec_1=tmp_vec_1;
+        byte_size=sizeof(unsigned char)*d;
     }
     else if(type==2)
     {
@@ -4546,6 +4570,7 @@ void AVec::change_dimension(int d)
         
         delete [] vec_2;
         vec_2=tmp_vec_2;
+        byte_size=sizeof(short int)*d;
     }
     else if(type==3)
     {
@@ -4557,6 +4582,7 @@ void AVec::change_dimension(int d)
         
         delete [] vec_3;
         vec_3=tmp_vec_3;
+        byte_size=sizeof(unsigned short int)*d;
     }
     else if(type==4)
     {
@@ -4568,6 +4594,7 @@ void AVec::change_dimension(int d)
         
         delete [] vec_4;
         vec_4=tmp_vec_4;
+        byte_size=sizeof(int)*d;
     }
     else if(type==5)
     {
@@ -4579,6 +4606,7 @@ void AVec::change_dimension(int d)
         
         delete [] vec_5;
         vec_5=tmp_vec_5;
+        byte_size=sizeof(unsigned int)*d;
     }
     else if(type==6)
     {
@@ -4590,6 +4618,7 @@ void AVec::change_dimension(int d)
         
         delete [] vec_6;
         vec_6=tmp_vec_6;
+        byte_size=sizeof(long int)*d;
     }
     else if(type==7)
     {
@@ -4601,6 +4630,7 @@ void AVec::change_dimension(int d)
         
         delete [] vec_7;
         vec_7=tmp_vec_7;
+        byte_size=sizeof(unsigned long int)*d;
     }
     else if(type==8)
     {
@@ -4612,6 +4642,7 @@ void AVec::change_dimension(int d)
         
         delete [] vec_8;
         vec_8=tmp_vec_8;
+        byte_size=sizeof(long long int)*d;
     }
     else if(type==9)
     {
@@ -4623,6 +4654,7 @@ void AVec::change_dimension(int d)
         
         delete [] vec_9;
         vec_9=tmp_vec_9;
+        byte_size=sizeof(unsigned long long int)*d;
     }
     else if(type==10)
     {
@@ -4634,6 +4666,7 @@ void AVec::change_dimension(int d)
         
         delete [] vec_10;
         vec_10=tmp_vec_10;
+        byte_size=sizeof(float)*d;
     }
     else if(type==11)
     {
@@ -4645,6 +4678,7 @@ void AVec::change_dimension(int d)
         
         delete [] vec_11;
         vec_11=tmp_vec_11;
+        byte_size=sizeof(double)*d;
     }
     else if(type==12)
     {
@@ -4656,6 +4690,7 @@ void AVec::change_dimension(int d)
         
         delete [] vec_12;
         vec_12=tmp_vec_12;
+        byte_size=sizeof(long double)*d;
     }
     dim=d;
     

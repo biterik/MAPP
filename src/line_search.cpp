@@ -207,6 +207,7 @@ int LineSearch_BackTrack::line_min(TYPE0& nrgy,TYPE0& alph)
     TYPE0 current_energy,ideal_energy;
     TYPE0* h;
     
+    
     if(chng_box)
     {
         alph=0.0;
@@ -277,7 +278,7 @@ int LineSearch_BackTrack::line_min(TYPE0& nrgy,TYPE0& alph)
             return LS_F_GRAD0;
         
         alpha_m=MIN(alpha_max,max_h_tot);
-        
+
         if(alpha_m<=alpha_min)
             return LS_F_ALPHAMIN;
         
@@ -285,7 +286,6 @@ int LineSearch_BackTrack::line_min(TYPE0& nrgy,TYPE0& alph)
         {
             ideal_energy=nrgy-alpha_m*c*inner;
             current_energy=energy(alpha_m);
-            
             if(current_energy<=ideal_energy)
             {
                 nrgy=current_energy;

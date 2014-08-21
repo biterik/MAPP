@@ -232,7 +232,6 @@ void Neighbor::create_list(int box_change,int s_or_x)
             
             for(int j=0;j<bin_neigh_list_size[ibin];j++)
             {
-                
                 jbin=bin_neigh_list[ibin][j];
                 jatm=first_atom_bin[jbin];
                 while(jatm!=-1)
@@ -321,7 +320,6 @@ void Neighbor::create_list(int box_change,int s_or_x)
     if(atm_bin_size)
         delete [] atm_bin;
     atm_bin_size=0;
-    
     
 }
 /*--------------------------------------------
@@ -460,6 +458,7 @@ void Neighbor::bin_atoms()
     for(int i=tot_natms-1;i>-1;i--)
     {
         bin=x2bin(&x[x_dim*i]);
+        
         if(i<atoms->natms)
             atm_bin[i]=bin;
         next_atm[i]=first_atom_bin[bin];

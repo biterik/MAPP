@@ -82,7 +82,7 @@ Min_CG::~Min_CG()
  --------------------------------------------*/
 void Min_CG::init()
 {
-    
+
     x_dim=atoms->vectors[0].dim;
     f_n=atoms->find_exist("f");
     if(f_n<0)
@@ -96,11 +96,15 @@ void Min_CG::init()
     vecs_comm=new VecLst(mapp,6,0,type_n,f_n,x_prev_n,f_prev_n,h_n);
     vecs_comm->add_update(0);
     atoms->reset_comm(vecs_comm);
+    
+
+    
     forcefield->init();
     atoms->ph_setup(1,vecs_comm);
     neighbor->init();
     neighbor->create_list(0,1);
-    
+    atoms->store_0();
+
     line_search=new LineSearch_BackTrack(mapp,vecs_comm);
     line_search->h_n=h_n;
     
@@ -281,9 +285,7 @@ void Min_CG::run()
             if(write!=NULL)
                 write->write();
             thermo->thermo_print();
-            
             err=line_search->line_min(curr_energy,alpha);
-            
             if(err==LS_S)
                 if(prev_energy-curr_energy<energy_tolerance)
                     err=MIN_F_TOLERANCE;
@@ -500,6 +502,7 @@ void Min_CG::run()
  --------------------------------------------*/
 void Min_CG::fin()
 {
+    //printf("alpha_min\n");
     forcefield->fin();
     neighbor->fin();
     
