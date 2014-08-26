@@ -439,7 +439,6 @@ void MD_NH::init()
 
     /*--------------------------------------*/
 
-
     if(chk_create_vel)
         create_vel(seed,t_tar);
     else
@@ -454,7 +453,6 @@ void MD_NH::init()
     CREATE1D(enst,7);
     forcefield->force_calc(1,enst);
 
-    
     thermo->update(stress_idx,6,&enst[1]);
     thermo->update(pe_idx,enst[0]);
     thermo->update(ke_idx,ke_cur);
@@ -1121,7 +1119,8 @@ void MD_NH::create_vel(int seed,TYPE0 temperature)
     ke_cur=(ke_curr[0]+ke_curr[1]+ke_curr[2]);
     t_cur=ke_cur/(boltz*no_dof);
     
-    TYPE0 ke_des=(boltz*3*atoms->tot_natms)*temperature;
+    
+    TYPE0 ke_des=(boltz*no_dof)*temperature;
     TYPE0 factor=sqrt(ke_des/ke_cur);
     TYPE0 facsq=ke_des/ke_cur;
     for(int i=0;i<3*natms;i++)

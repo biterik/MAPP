@@ -43,6 +43,7 @@ namespace MAPP_NS
         TYPE0 cut_sq;
         TYPE0 cut_sq_mod;
         TYPE0 rc,mod_rc,c_0,kbT;
+        TYPE0 aug_fac;
         
         /*--------------------------------------------*/
         TYPE0* drhoi_dr;

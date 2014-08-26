@@ -18,8 +18,8 @@ namespace MAPP_NS {
         TYPE0** mat_t_2;
         TYPE0* mat_A;
         
-        TYPE0* cut_sq_phi;
-        TYPE0* cut_sq_rho;
+        TYPE0* cut_phi;
+        TYPE0* cut_rho;
         TYPE0* mat_k_1;
         TYPE0* mat_k_2;
         TYPE0* mat_k_3;
@@ -28,11 +28,18 @@ namespace MAPP_NS {
         
         TYPE0* nrgy_strss;
         
+        /*--------------------------------------------*/
+        TYPE0* drhoi_dr;
+        TYPE0* drhoj_dr;
+        int max_pairs;
+        /*--------------------------------------------*/
+        
     protected:
     public:
         ForceField_fs(MAPP *);
         ~ForceField_fs();
         void force_calc(int,TYPE0*);
+        void force_calc0(int,TYPE0*);
         TYPE0 energy_calc();
         void init();
         void fin();

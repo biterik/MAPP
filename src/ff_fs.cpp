@@ -26,6 +26,8 @@ using namespace std;
 ForceField_fs::
 ForceField_fs(MAPP* mapp) : ForceField(mapp)
 {
+    max_pairs=0;
+    
     if(atoms->dimension!=3)
         error->abort("to use FS potential, dimension of the box should be 3");
     
@@ -45,8 +47,8 @@ ForceField_fs(MAPP* mapp) : ForceField(mapp)
     
     arr_size=0;
     size=static_cast<int>((no_types+2)*(no_types+1)/2);
-    GROW(cut_sq_phi,arr_size,size);
-    GROW(cut_sq_rho,arr_size,size);
+    GROW(cut_phi,arr_size,size);
+    GROW(cut_rho,arr_size,size);
     
     GROW(mat_k_1,arr_size,size);
     GROW(mat_k_2,arr_size,size);
@@ -57,7 +59,7 @@ ForceField_fs(MAPP* mapp) : ForceField(mapp)
     
     
     for(int i=0;i<size;i++)
-        cut_sq_phi[i]=cut_sq_rho[i]
+        cut_phi[i]=cut_rho[i]
         =mat_k_1[i]=mat_k_2[i]=mat_k_3[i]
         =cut_sq[i]=cut_sk_sq[i]=0.0;
     
@@ -88,8 +90,8 @@ ForceField_fs::~ForceField_fs()
         
         delete [] mat_A;
         
-        delete [] cut_sq_phi;
-        delete [] cut_sq_rho;
+        delete [] cut_phi;
+        delete [] cut_rho;
         
         delete [] mat_k_1;
         delete [] mat_k_2;
@@ -275,8 +277,8 @@ void ForceField_fs::coef(int narg,char** arg)
                 if(no_arg==5)
                 {
                     comp=COMP(types[no_0],types[no_1]);
-                    cut_sq_rho[comp]=atof(argtrm[0])*atof(argtrm[0]);
-                    cut_sq_phi[comp]=atof(argtrm[1])*atof(argtrm[1]);
+                    cut_rho[comp]=atof(argtrm[0]);
+                    cut_phi[comp]=atof(argtrm[1]);
                     mat_k_1[comp]=atof(argtrm[2]);
                     mat_k_2[comp]=atof(argtrm[3]);
                     mat_k_3[comp]=atof(argtrm[4]);
@@ -318,8 +320,8 @@ void ForceField_fs::coef(int narg,char** arg)
 
     int size=static_cast<int>((no_types+2)*(no_types+1)/2);
     
-    MPI_Bcast(&cut_sq_phi[0],size,MPI_TYPE0,0,world);
-    MPI_Bcast(&cut_sq_rho[0],size,MPI_TYPE0,0,world);
+    MPI_Bcast(&cut_phi[0],size,MPI_TYPE0,0,world);
+    MPI_Bcast(&cut_rho[0],size,MPI_TYPE0,0,world);
     MPI_Bcast(&mat_k_1[0],size,MPI_TYPE0,0,world);
     MPI_Bcast(&mat_k_2[0],size,MPI_TYPE0,0,world);
     MPI_Bcast(&mat_k_3[0],size,MPI_TYPE0,0,world);
@@ -339,7 +341,7 @@ void ForceField_fs::init()
     for (int i=0;i<arr_size;i++)
         if (chk_coef[i])
         {
-            cut_sq[i]=MAX(cut_sq_phi[i],cut_sq_rho[i]);
+            cut_sq[i]=MAX(cut_phi[i]*cut_phi[i],cut_rho[i]*cut_rho[i]);
             cut_sk_sq[i]=cut_sq[i]+(skin)*(skin)
             +2*sqrt(cut_sq[i])*(skin);
             ph_cut=MAX(ph_cut,sqrt(cut_sq[i]));
@@ -359,8 +361,14 @@ void ForceField_fs::init()
  --------------------------------------------*/
 void ForceField_fs::fin()
 {
+    if(max_pairs)
+    {
+        delete [] drhoi_dr;
+        delete [] drhoj_dr;
+        max_pairs=0;
+    }
+    
     atoms->del(rho_n);
-
 }
 /*--------------------------------------------
  force and energy calculation
@@ -368,12 +376,19 @@ void ForceField_fs::fin()
 void ForceField_fs::
 force_calc(int st_clc,TYPE0* en_st)
 {
-    /*
-    TYPE0* x=(TYPE0*)atoms->vectors[x_n].ret_vec();
-    TYPE0* f=(TYPE0*)atoms->vectors[f_n].ret_vec();
-    TYPE0* rho=(TYPE0*)atoms->vectors[rho_n].ret_vec();
-    int* type=(int*)atoms->vectors[type_n].ret_vec();
-     */
+    if(max_pairs<neighbor->no_pairs)
+    {
+        if(max_pairs)
+        {
+            delete [] drhoi_dr;
+            delete [] drhoj_dr;
+        }
+        
+        max_pairs=neighbor->no_pairs;
+        CREATE1D(drhoi_dr,max_pairs);
+        CREATE1D(drhoj_dr,max_pairs);
+    }
+    
     TYPE0* x;
     atoms->vectors[x_n].ret(x);
     TYPE0* f;
@@ -386,9 +401,9 @@ force_calc(int st_clc,TYPE0* en_st)
     int iatm,jatm;
     
     int itype,jtype,curs,icomp,jcomp;
-    TYPE0 dx0,dx1,dx2,rsq,csq;
-    TYPE0 dr_rho,dr_phi,r,rho_coef,phi_coef;
-
+    TYPE0 dx0,dx1,dx2,rsq;
+    TYPE0 dr_rho,dr_phi,r,rho_coef,phi_coef,r_inv,rho_sqd;
+    
     int** neighbor_list=neighbor->neighbor_list;
     int* neighbor_list_size=neighbor->neighbor_list_size;
     
@@ -397,11 +412,12 @@ force_calc(int st_clc,TYPE0* en_st)
         for (int i=1;i<7;i++)
             nrgy_strss[i]=0.0;
     
-
+    int istart;
     int natms=atoms->natms;
     
     for(iatm=0;iatm<natms;iatm++) rho[iatm]=0.0;
     
+    istart=0;
     for(iatm=0;iatm<natms;iatm++)
     {
         itype=type[iatm];
@@ -411,119 +427,61 @@ force_calc(int st_clc,TYPE0* en_st)
             jatm=neighbor_list[iatm][j];
             jtype=type[jatm];
             curs=COMP(itype,jtype);
+            
+            drhoi_dr[istart]=drhoj_dr[istart]=0.0;
+            
             if(chk_coef[curs])
             {
-                jcomp=3*jatm;
-                dx0=x[icomp]-x[jcomp];
-                dx1=x[icomp+1]-x[jcomp+1];
-                dx2=x[icomp+2]-x[jcomp+2];
-                rsq=dx0*dx0+dx1*dx1+dx2*dx2;
-    
-                if(rsq < cut_sq_rho[curs])
-                {
-                    r=sqrt(rsq);
-                    dr_rho=r-sqrt(cut_sq_rho[curs]);
-                    rho[iatm]+=dr_rho*dr_rho*(mat_t_1[itype][jtype]
-                    +mat_t_2[itype][jtype]*dr_rho);                    
-                    if(jatm<natms)
-                        rho[jatm]+=dr_rho*dr_rho*(mat_t_1[jtype][itype]
-                        +mat_t_2[jtype][itype]*dr_rho);
-                    
-                }
-            }
-        }
-    }
-    
-    atoms->update(rho_n);
-    
-    for(iatm=0;iatm<natms;iatm++)
-    {
-        itype=type[iatm];
-        icomp=3*iatm;
-        nrgy_strss[0]+=-mat_A[itype]*sqrt(rho[iatm]);
-        for(int j=0;j<neighbor_list_size[iatm];j++)
-        {
-            jatm=neighbor_list[iatm][j];
-            jtype=type[jatm];
-            curs=COMP(itype,jtype);
-            if(chk_coef[curs])
-            {
+                
                 jcomp=3*jatm;
                 dx0=x[icomp]-x[jcomp];
                 dx1=x[icomp+1]-x[jcomp+1];
                 dx2=x[icomp+2]-x[jcomp+2];
                 rsq=dx0*dx0+dx1*dx1+dx2*dx2;
                 
-                csq=cut_sq[curs];
-                
-                if(rsq < csq)
+                if(rsq<cut_sq[curs])
                 {
                     r=sqrt(rsq);
-                    
-                    if(rsq < cut_sq_rho[curs])
-                    {
-                        dr_rho=r-sqrt(cut_sq_rho[curs]);
+                    r_inv=1.0/r;
 
-                        rho_coef=mat_A[itype]*(dr_rho*(1.0*mat_t_1[itype][jtype]
-                            +1.5*mat_t_2[itype][jtype]*dr_rho))/sqrt(rho[iatm]);
-                        rho_coef+=mat_A[jtype]*(dr_rho*(1.0*mat_t_1[jtype][itype]
-                            +1.5*mat_t_2[jtype][itype]*dr_rho))/sqrt(rho[jatm]);
-                        rho_coef*=1.0/r;
+                    if(r < cut_rho[curs])
+                    {
+                        dr_rho=r-cut_rho[curs];
+                        rho[iatm]+=dr_rho*dr_rho*(mat_t_1[jtype][itype]
+                                +mat_t_2[jtype][itype]*dr_rho);
                         
-                        f[icomp]+=dx0*rho_coef;
-                        f[icomp+1]+=dx1*rho_coef;
-                        f[icomp+2]+=dx2*rho_coef;
                         
+                        drhoi_dr[istart]=-r_inv*dr_rho*(mat_t_1[jtype][itype]
+                                    +1.5*mat_t_2[jtype][itype]*dr_rho);
+                        
+                        drhoj_dr[istart]=-r_inv*dr_rho*(mat_t_1[itype][jtype]
+                                    +1.5*mat_t_2[itype][jtype]*dr_rho);
                         
                         if(jatm<natms)
-                        {
-                            f[jcomp]-=dx0*rho_coef;
-                            f[jcomp+1]-=dx1*rho_coef;
-                            f[jcomp+2]-=dx2*rho_coef;
-                            
-                            
-                            if (st_clc)
-                            {
-                                nrgy_strss[1]+=rho_coef*dx0*dx0;
-                                nrgy_strss[2]+=rho_coef*dx1*dx1;
-                                nrgy_strss[3]+=rho_coef*dx2*dx2;
-                                nrgy_strss[4]+=rho_coef*dx1*dx2;
-                                nrgy_strss[5]+=rho_coef*dx2*dx0;
-                                nrgy_strss[6]+=rho_coef*dx0*dx1;
-                            }
-                        }
-                        else
-                        {
-                            if (st_clc)
-                            {
-                                nrgy_strss[1]+=0.5*rho_coef*dx0*dx0;
-                                nrgy_strss[2]+=0.5*rho_coef*dx1*dx1;
-                                nrgy_strss[3]+=0.5*rho_coef*dx2*dx2;
-                                nrgy_strss[4]+=0.5*rho_coef*dx1*dx2;
-                                nrgy_strss[5]+=0.5*rho_coef*dx2*dx0;
-                                nrgy_strss[6]+=0.5*rho_coef*dx0*dx1;
-                            }
-                        }
+                            rho[jatm]+=dr_rho*dr_rho*(mat_t_1[itype][jtype]
+                                    +mat_t_2[itype][jtype]*dr_rho);
+                        
+                        
                     }
                     
-                    if(rsq < cut_sq_phi[curs])
+                    if(r < cut_phi[curs])
                     {
-                        dr_phi=r-sqrt(cut_sq_phi[curs]);
-                        phi_coef=-2*dr_phi*(mat_k_1[curs]+mat_k_2[curs]*r+mat_k_3[curs]*rsq);
-                        phi_coef-=dr_phi*dr_phi*(mat_k_2[curs]+2*mat_k_3[curs]*r);
-                        phi_coef*=1.0/r;
-
+                        dr_phi=r-cut_phi[curs];
+                        phi_coef=2.0*dr_phi*(mat_k_1[curs]+mat_k_2[curs]*r+mat_k_3[curs]*rsq)
+                        +dr_phi*dr_phi*(mat_k_2[curs]+2.0*mat_k_3[curs]*r);
+                        phi_coef*=-r_inv;
                         
-                        f[icomp]+=0.5*dx0*phi_coef;
-                        f[icomp+1]+=0.5*dx1*phi_coef;
-                        f[icomp+2]+=0.5*dx2*phi_coef;
+                        
+                        f[icomp]+=dx0*phi_coef;
+                        f[icomp+1]+=dx1*phi_coef;
+                        f[icomp+2]+=dx2*phi_coef;
                         
                         
                         if(jatm<natms)
                         {
-                            f[jcomp]-=0.5*dx0*phi_coef;
-                            f[jcomp+1]-=0.5*dx1*phi_coef;
-                            f[jcomp+2]-=0.5*dx2*phi_coef;
+                            f[jcomp]-=dx0*phi_coef;
+                            f[jcomp+1]-=dx1*phi_coef;
+                            f[jcomp+2]-=dx2*phi_coef;
                             
                             nrgy_strss[0]+=dr_phi*dr_phi*(mat_k_1[curs]+mat_k_2[curs]*r+mat_k_3[curs]*rsq);
                             if (st_clc)
@@ -551,7 +509,79 @@ force_calc(int st_clc,TYPE0* en_st)
                         }
                     }
                 }
+                
+                
+                
+                
             }
+            
+            istart++;
+        }
+        
+        rho_sqd=sqrt(rho[iatm]);
+        nrgy_strss[0]-=mat_A[itype]*rho_sqd;
+        rho[iatm]=-mat_A[itype]/rho_sqd;
+    }
+    
+    atoms->update(rho_n);
+    
+    istart=0;
+    for(iatm=0;iatm<natms;iatm++)
+    {
+        itype=type[iatm];
+        icomp=3*iatm;
+        
+        for(int j=0;j<neighbor_list_size[iatm];j++)
+        {
+            
+            if(drhoi_dr[istart]!=0.0 || drhoj_dr[istart]!=0.0)
+            {
+                jatm=neighbor_list[iatm][j];
+                jcomp=3*jatm;
+                dx0=x[icomp]-x[jcomp];
+                dx1=x[icomp+1]-x[jcomp+1];
+                dx2=x[icomp+2]-x[jcomp+2];
+                
+                rho_coef=drhoi_dr[istart]*rho[iatm]
+                +drhoj_dr[istart]*rho[jatm];
+                f[icomp]+=dx0*rho_coef;
+                f[icomp+1]+=dx1*rho_coef;
+                f[icomp+2]+=dx2*rho_coef;
+                
+                if(jatm<natms)
+                {
+                    f[jcomp]-=dx0*rho_coef;
+                    f[jcomp+1]-=dx1*rho_coef;
+                    f[jcomp+2]-=dx2*rho_coef;
+                    
+                    
+                    if (st_clc)
+                    {
+                        nrgy_strss[1]+=rho_coef*dx0*dx0;
+                        nrgy_strss[2]+=rho_coef*dx1*dx1;
+                        nrgy_strss[3]+=rho_coef*dx2*dx2;
+                        nrgy_strss[4]+=rho_coef*dx1*dx2;
+                        nrgy_strss[5]+=rho_coef*dx2*dx0;
+                        nrgy_strss[6]+=rho_coef*dx0*dx1;
+                    }
+                }
+                else
+                {
+                    if (st_clc)
+                    {
+                        nrgy_strss[1]+=0.5*rho_coef*dx0*dx0;
+                        nrgy_strss[2]+=0.5*rho_coef*dx1*dx1;
+                        nrgy_strss[3]+=0.5*rho_coef*dx2*dx2;
+                        nrgy_strss[4]+=0.5*rho_coef*dx1*dx2;
+                        nrgy_strss[5]+=0.5*rho_coef*dx2*dx0;
+                        nrgy_strss[6]+=0.5*rho_coef*dx0*dx1;
+                    }
+                }
+                
+            }
+            
+            istart++;
+
         }
     }
     
@@ -576,11 +606,6 @@ force_calc(int st_clc,TYPE0* en_st)
  --------------------------------------------*/
 TYPE0 ForceField_fs::energy_calc()
 {
-    /*
-    TYPE0* x=(TYPE0*)atoms->vectors[x_n].ret_vec();
-    TYPE0* rho=(TYPE0*)atoms->vectors[rho_n].ret_vec();
-    int* type=(int*)atoms->vectors[type_n].ret_vec();
-     */
     TYPE0* x;
     atoms->vectors[x_n].ret(x);
     TYPE0* rho;
@@ -624,19 +649,19 @@ TYPE0 ForceField_fs::energy_calc()
                 if(rsq < csq)
                 {
                     r=sqrt(rsq);
-                    if(rsq < cut_sq_rho[curs])
+                    if(r < cut_rho[curs])
                     {
-                        dr_rho=r-sqrt(cut_sq_rho[curs]);
-                        rho[iatm]+=dr_rho*dr_rho*(mat_t_1[itype][jtype]
-                        +mat_t_2[itype][jtype]*dr_rho);
+                        dr_rho=r-cut_rho[curs];
+                        rho[iatm]+=dr_rho*dr_rho*(mat_t_1[jtype][itype]
+                        +mat_t_2[jtype][itype]*dr_rho);
                         if(jatm<natms)
-                            rho[jatm]+=dr_rho*dr_rho*(mat_t_1[jtype][itype]
-                                +mat_t_2[jtype][itype]*dr_rho);
+                            rho[jatm]+=dr_rho*dr_rho*(mat_t_1[itype][jtype]
+                            +mat_t_2[itype][jtype]*dr_rho);
                     }
                     
-                    if(rsq < cut_sq_phi[curs])
+                    if(r < cut_phi[curs])
                     {
-                        dr_phi=r-sqrt(cut_sq_phi[curs]);
+                        dr_phi=r-cut_phi[curs];
                         if(jatm<natms)
                         {
                             en+=dr_phi*dr_phi*(mat_k_1[curs]+mat_k_2[curs]*r+mat_k_3[curs]*rsq);
@@ -649,9 +674,9 @@ TYPE0 ForceField_fs::energy_calc()
                 }
             }
         }
-        en+=-mat_A[itype]*sqrt(rho[iatm]);
+        en-=mat_A[itype]*sqrt(rho[iatm]);
     }
-    
+
     MPI_Allreduce(&en,&en_tot,1,MPI_TYPE0,MPI_SUM,world);
     return en_tot;
 }

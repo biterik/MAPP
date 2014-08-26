@@ -206,8 +206,8 @@ force_calc(int st_clc,TYPE0* en_st)
                         coef0=PI_IN_SQ*r_inv;
                         coef1=-coef0*r_inv;
                         coef3=-coef0*beta_inv;
-                        coef2=2.0*coef3*beta_inv;
-                        coef4=-coef2*beta_inv;
+                        coef2=2.0*coef3;
+                        coef4=-coef2;
 
                         
                         phi=coef0*g_0_phi;
@@ -421,7 +421,7 @@ TYPE0 ForceField_DMD::energy_calc()
     
     int iatm,jatm;
     
-    int itype,jtype,icomp,jcomp,istart;
+    int itype,jtype,icomp,jcomp;
     TYPE0 dx0,dx1,dx2,rsq,z2;
     TYPE0 r,p,r_inv=0.0;
     int m;
@@ -443,11 +443,12 @@ TYPE0 ForceField_DMD::energy_calc()
     for(iatm=0;iatm<natms;iatm++) rho[iatm]=0.0;
     TYPE0 en=0.0;
     TYPE0 en_tot=0.0;
-    istart=0;
+    
     for(iatm=0;iatm<natms;iatm++)
     {
         itype=type[iatm];
         icomp=4*iatm;
+        
         en-=3.0*kbT*log(x[icomp+3]);
         for(int j=0;j<neighbor_list_size[iatm];j++)
         {
@@ -511,10 +512,12 @@ TYPE0 ForceField_DMD::energy_calc()
                             }
                         }
                         
+                        
                         coef0=PI_IN_SQ*r_inv;
 
                         
                         phi=coef0*g_0_phi;
+                        
                         rho_i=coef0*g_0_rho_i;
                         rho_j=coef0*g_0_rho_j;
 
@@ -572,8 +575,8 @@ TYPE0 ForceField_DMD::energy_calc()
         
     }
     
+
     MPI_Allreduce(&en,&en_tot,1,MPI_TYPE0,MPI_SUM,world);
-    //printf("energy: %30.20lf \n",en_tot);
     en_tot+=c_0;
     return en_tot;
 }
@@ -704,10 +707,9 @@ void ForceField_DMD::coef(int narg,char** arg)
     atoms->vectors[0].ret(x);
     int tot_natms=atoms->natms+atoms->natms_ph;
     
-    //cout<<"fff "<<beta_min<<" "<<beta_max << endl;
-    TYPE0 alpha_ave=0.5*(alpha_min+alpha_max);    
+    TYPE0 alpha_ave=0.5*(alpha_min+alpha_max);
     TYPE0 beta_ave=0.5*(beta_min+beta_max);
-    alpha_ave=30.0;
+    alpha_ave=20.0;
     beta_ave=1.0/sqrt(alpha_ave);
     for(int i=0;i<tot_natms;i++)
         x[i*4+3]=beta_ave;
