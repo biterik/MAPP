@@ -15,7 +15,7 @@
 namespace MAPP_NS {
     class MD_NH : public MD{
     private:
-        int x_n,x_d_n,f_n,type_n;
+        int x_n,x_d_n,f_n,type_n,id_n,dof_n;
         TYPE0 MTK_1,MTK_2;
         TYPE0 ke_cur,ke_tar,t_tar,t_cur;
         TYPE0* ke_curr;
@@ -69,6 +69,7 @@ namespace MAPP_NS {
         int ke_idx;
         int temp_idx;
         int stress_idx;
+        int omega_denom;
     protected:
     public:
         MD_NH(MAPP *,int,char**);

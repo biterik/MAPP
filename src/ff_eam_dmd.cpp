@@ -565,7 +565,6 @@ TYPE0 ForceField_eam_dmd::energy_calc()
 
     MPI_Allreduce(&en,&en_tot,1,MPI_TYPE0,MPI_SUM,world);
     en_tot+=c_0;
-    printf("energy: %30.20lf \n",en_tot);
     return en_tot;
 }
 /*--------------------------------------------

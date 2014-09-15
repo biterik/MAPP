@@ -56,7 +56,7 @@ MAPP(int narg,char** args,MPI_Comm communicator)
     mode=MD;
     atoms->add<TYPE0>(1, 3,"x");
     atoms->add<int>(1, 1,"type");
-    
+    atoms->add<int>(0, 1,"id");
     
     input_file=NULL;
     input_file=stdin;

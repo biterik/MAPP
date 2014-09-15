@@ -1821,7 +1821,7 @@ void Atoms::update_0(int box_change,int neigh_chk
     MPI_Allreduce(&check,&check_all,1,
     MPI_INT,MPI_MAX,comm_world);
 
-
+    
     if(check_all)
     {
         x2s(natms);

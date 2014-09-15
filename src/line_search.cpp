@@ -16,6 +16,7 @@ LineSearch::LineSearch(MAPP* mapp,VecLst*vec_list)
     dim=atoms->dimension;
     x_dim=atoms->vectors[0].dim;
     vecs_comm=vec_list;
+    dof_n=atoms->find_exist("dof");
     
 }
 /*--------------------------------------------
@@ -77,7 +78,7 @@ void LineSearch::normalize_h()
     for(int i=0;i<x_dim*atoms->natms;i++)
         inner+=h[i]*h[i];
     MPI_Allreduce(&inner,&inner_tot,1,MPI_TYPE0,MPI_SUM,world);
-    
+        
     inner_tot=d_max/sqrt(inner_tot);
     
     for(int i=0;i<x_dim*atoms->natms;i++)
@@ -116,10 +117,13 @@ TYPE0 LineSearch::energy(TYPE0 alpha)
     TYPE0* x;
     TYPE0* x_prev;
     TYPE0* h;
+    char* dof=NULL;
     
     atoms->vectors[x_n].ret(x);
     atoms->vectors[x_prev_n].ret(x_prev);
     atoms->vectors[h_n].ret(h);
+    if(dof_n>-1)
+        atoms->vectors[dof_n].ret(dof);
 
     if(chng_box)
     {
@@ -157,6 +161,11 @@ TYPE0 LineSearch::energy(TYPE0 alpha)
             }
             icomp+=x_dim;
         }
+        
+        if(dof_n>-1)
+            for(int i=0;i<(atoms->natms)*x_dim;i++)
+                if(dof[i]==1) x[i]=x_prev[i];
+        
         atoms->update_0(1,1,vecs_comm);
         
         return forcefield->energy_calc();

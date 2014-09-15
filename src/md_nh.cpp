@@ -383,6 +383,7 @@ void MD_NH::init()
     dt8=0.125*dt;
     x_n=atoms->find("x");
     type_n=atoms->find("type");
+    id_n=atoms->find("id");
     
     x_d_n=atoms->find_exist("x_d");
     if(x_d_n<0)
@@ -406,7 +407,51 @@ void MD_NH::init()
      allocates the f vector with the
      appropriate size
      */
-    vecs_comm=new VecLst(mapp,3,x_n,x_d_n,type_n);
+    dof_n=atoms->find_exist("dof");
+    if(dof_n>-1)
+        vecs_comm=new VecLst(mapp,5,x_n,x_d_n,type_n,id_n,dof_n);
+    else
+        vecs_comm=new VecLst(mapp,4,x_n,x_d_n,type_n,id_n);
+    
+    if(chk_stress)
+    {
+        omega_denom=chk_tau[0]*atoms->tot_natms
+        +chk_tau[1]*atoms->tot_natms
+        +chk_tau[2]*atoms->tot_natms;
+    }
+    
+    if(dof_n!=-1)
+    {
+        char* dof;
+        atoms->vectors[dof_n].ret(dof);
+
+        int tmp_0=0;
+        int tmp_1=0;
+        int tmp_2=0;
+        
+        for(int i=0;i<atoms->natms;i++)
+        {
+            if(dof[3*i]=='1') tmp_0++;
+            if(dof[3*i+1]=='1') tmp_1++;
+            if(dof[3*i+2]=='1') tmp_2++;
+        }
+        
+        
+        int tmp_all_0=0;
+        int tmp_all_1=0;
+        int tmp_all_2=0;
+        MPI_Allreduce(&tmp_0,&tmp_all_0,1,MPI_INT,MPI_SUM,world);
+        MPI_Allreduce(&tmp_1,&tmp_all_1,1,MPI_INT,MPI_SUM,world);
+        MPI_Allreduce(&tmp_2,&tmp_all_2,1,MPI_INT,MPI_SUM,world);
+        
+        no_dof-=tmp_all_0+tmp_all_1+tmp_all_2;
+        
+        if(chk_stress)
+            omega_denom-=chk_tau[0]*tmp_all_0
+            +chk_tau[1]*tmp_all_1+chk_tau[2]*tmp_all_2;
+        
+    }
+        
     vecs_comm->add_update(x_n);
     atoms->reset_comm(vecs_comm);
     /*--------------------------------------*/
@@ -716,6 +761,10 @@ void MD_NH::update_x(TYPE0 dlt)
     TYPE0* x_d;
     atoms->vectors[x_d_n].ret(x_d);
     
+    char* dof=NULL;
+    if(dof_n!=-1)
+            atoms->vectors[dof_n].ret(dof);
+    
     int natms=atoms->natms;
     int icomp;
     x_ave[0]=x_ave[1]=x_ave[2]=0.0;
@@ -743,12 +792,30 @@ void MD_NH::update_x(TYPE0 dlt)
             xt[1]+=x_d[icomp+1]*dlt;
             xt[2]+=x_d[icomp+2]*dlt;
             
-            x[icomp]=xt[0]*M2[0][0]
-            +xt[1]*M2[1][0]
-            +xt[2]*M2[2][0];
-            x[icomp+1]=xt[1]*M2[1][1]
-            +xt[2]*M2[2][1];
-            x[icomp+2]=xt[2]*M2[2][2];
+            if(dof_n==-1)
+            {
+                x[icomp]=xt[0]*M2[0][0]
+                +xt[1]*M2[1][0]
+                +xt[2]*M2[2][0];
+                x[icomp+1]=xt[1]*M2[1][1]
+                +xt[2]*M2[2][1];
+                x[icomp+2]=xt[2]*M2[2][2];
+            }
+            else
+            {
+                if(dof[icomp]=='0')
+                    x[icomp]=xt[0]*M2[0][0]
+                    +xt[1]*M2[1][0]
+                    +xt[2]*M2[2][0];
+                
+                if(dof[icomp+1]=='0')
+                    x[icomp+1]=xt[1]*M2[1][1]
+                    +xt[2]*M2[2][1];
+                
+                if(dof[icomp+2]=='0')
+                    x[icomp+2]=xt[2]*M2[2][2];
+                    
+            }
             
             x_ave[0]+=x[icomp];
             x_ave[1]+=x[icomp+1];
@@ -794,12 +861,10 @@ void MD_NH::update_x(TYPE0 dlt)
 void MD_NH::update_x_d(TYPE0 dlt)
 {
     
-
-    /*
-    TYPE0* x_d=(TYPE0*)atoms->vectors[x_d_n].ret_vec();
-    TYPE0* f=(TYPE0*)atoms->vectors[f_n].ret_vec();
-    int* type=(int*)atoms->vectors[type_n].ret_vec();
-     */
+    char* dof=NULL;
+    if(dof_n!=-1)
+        atoms->vectors[dof_n].ret(dof);
+    
     TYPE0* x_d;
     atoms->vectors[x_d_n].ret(x_d);
     TYPE0* f;
@@ -823,6 +888,17 @@ void MD_NH::update_x_d(TYPE0 dlt)
         x_d[icomp]+=f[icomp]*dlt/mass[type[i]];
         x_d[icomp+1]+=f[icomp+1]*dlt/mass[type[i]];
         x_d[icomp+2]+=f[icomp+2]*dlt/mass[type[i]];
+        if(dof_n!=-1)
+        {
+            if(dof[icomp]=='1')
+                x_d[icomp]=0.0;
+            if(dof[icomp+1]=='1')
+                x_d[icomp+1]=0.0;
+            if(dof[icomp+2]=='1')
+                x_d[icomp+2]=0.0;
+            
+        }
+        
         
         temp[0]+=mass[type[i]]*x_d[icomp]*x_d[icomp];
         temp[1]+=mass[type[i]]*x_d[icomp+1]*x_d[icomp+1];
@@ -839,7 +915,7 @@ void MD_NH::update_x_d(TYPE0 dlt)
     MPI_Allreduce(temp,ke_curr,6,MPI_TYPE0,MPI_SUM,world);
     ke_cur=(ke_curr[0]+ke_curr[1]+ke_curr[2]);
 
-    t_cur=ke_cur/(boltz*3*atoms->tot_natms);
+    t_cur=ke_cur/(boltz*no_dof);
 
 }
 /*--------------------------------------------
@@ -985,8 +1061,7 @@ void MD_NH::update_omega_d(TYPE0 dlt)
     for(int i=0;i<3;i++)
         if (chk_tau[i])
             MTK_1+=ke_curr[i];
-    MTK_1/=(chk_tau[0]+chk_tau[1]+chk_tau[2])
-    *atoms->tot_natms;
+    MTK_1/=omega_denom;
     
     couple();
     for (int i=0;i<6;i++)
@@ -1000,8 +1075,7 @@ void MD_NH::update_omega_d(TYPE0 dlt)
         if (chk_tau[i])
             MTK_2+=omega_d[i];
 
-    MTK_2/=(chk_tau[0]+chk_tau[1]+chk_tau[2])
-    *atoms->tot_natms;
+    MTK_2/=omega_denom;
 }
 /*--------------------------------------------
  
@@ -1011,12 +1085,11 @@ void MD_NH::update_x_d_xpnd(TYPE0 dlt)
     TYPE0 fac[3];
     TYPE0 temp[6];
     
+    char* dof=NULL;
+    if(dof_n!=-1)
+        atoms->vectors[dof_n].ret(dof);
     
-
-    /*
-    TYPE0* x_d=(TYPE0*)atoms->vectors[x_d_n].ret_vec();
-    int* type=(int*)atoms->vectors[type_n].ret_vec();
-     */
+    
     TYPE0* x_d;
     atoms->vectors[x_d_n].ret(x_d);
     int* type;
@@ -1047,6 +1120,13 @@ void MD_NH::update_x_d_xpnd(TYPE0 dlt)
         x_d[icomp+1]*=fac[1];
         x_d[icomp+2]*=fac[2];
         
+        if(dof_n!=-1)
+        {
+            if(dof[icomp]=='1') x_d[icomp]=0.0;
+            if(dof[icomp+1]=='1') x_d[icomp+1]=0.0;
+            if(dof[icomp+2]=='1') x_d[icomp+2]=0.0;
+        }
+        
         temp[0]+=mass[type[i]]*x_d[icomp]*x_d[icomp];
         temp[1]+=mass[type[i]]*x_d[icomp+1]*x_d[icomp+1];
         temp[2]+=mass[type[i]]*x_d[icomp+2]*x_d[icomp+2];
@@ -1059,7 +1139,7 @@ void MD_NH::update_x_d_xpnd(TYPE0 dlt)
         ke_curr[i]=0.0;
     MPI_Allreduce(temp,ke_curr,6,MPI_TYPE0,MPI_SUM,world);
     ke_cur=(ke_curr[0]+ke_curr[1]+ke_curr[2]);
-    t_cur=ke_cur/(boltz*3*atoms->tot_natms);
+    t_cur=ke_cur/(boltz*no_dof);
 }
 /*--------------------------------------------
  zero acceleration
@@ -1077,6 +1157,10 @@ void MD_NH::zero_f()
  --------------------------------------------*/
 void MD_NH::create_vel(int seed,TYPE0 temperature)
 {
+    char* dof=NULL;
+    if(dof_n!=-1)
+        atoms->vectors[dof_n].ret(dof);
+    
     TYPE0* x_d;
     atoms->vectors[atoms->find("x_d")].ret(x_d);
     int* type;
@@ -1099,6 +1183,12 @@ void MD_NH::create_vel(int seed,TYPE0 temperature)
         icomp=3*i;
         for(int j=0;j<3;j++)
             x_d[icomp+j]=random->gaussian()/(sqrt(mass[type[i]]));
+        if(dof_n!=-1)
+        {
+            if(dof[icomp]=='1') x_d[icomp]=0.0;
+            if(dof[icomp+1]=='1') x_d[icomp+1]=0.0;
+            if(dof[icomp+2]=='1') x_d[icomp+2]=0.0;
+        }
 
         temp[0]+=mass[type[i]]*x_d[icomp]*x_d[icomp];
         temp[1]+=mass[type[i]]*x_d[icomp+1]*x_d[icomp+1];
@@ -1171,7 +1261,7 @@ void MD_NH::init_vel(TYPE0 temperature)
     MPI_Allreduce(temp,ke_curr,6,MPI_TYPE0,MPI_SUM,world);
     
     ke_cur=(ke_curr[0]+ke_curr[1]+ke_curr[2]);
-    t_cur=ke_cur/(boltz*3*atoms->tot_natms);
+    t_cur=ke_cur/(boltz*no_dof);
     
     if(ke_cur==0)
         error->abort("initial velocities are zero "

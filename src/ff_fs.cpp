@@ -376,7 +376,7 @@ void ForceField_fs::fin()
 void ForceField_fs::
 force_calc(int st_clc,TYPE0* en_st)
 {
-    if(max_pairs<neighbor->no_pairs)
+        if(max_pairs<neighbor->no_pairs)
     {
         if(max_pairs)
         {
@@ -388,6 +388,7 @@ force_calc(int st_clc,TYPE0* en_st)
         CREATE1D(drhoi_dr,max_pairs);
         CREATE1D(drhoj_dr,max_pairs);
     }
+
     
     TYPE0* x;
     atoms->vectors[x_n].ret(x);
@@ -460,7 +461,6 @@ force_calc(int st_clc,TYPE0* en_st)
                         if(jatm<natms)
                             rho[jatm]+=dr_rho*dr_rho*(mat_t_1[itype][jtype]
                                     +mat_t_2[itype][jtype]*dr_rho);
-                        
                         
                     }
                     
@@ -553,7 +553,6 @@ force_calc(int st_clc,TYPE0* en_st)
                     f[jcomp]-=dx0*rho_coef;
                     f[jcomp+1]-=dx1*rho_coef;
                     f[jcomp+2]-=dx2*rho_coef;
-                    
                     
                     if (st_clc)
                     {

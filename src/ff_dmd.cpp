@@ -709,7 +709,7 @@ void ForceField_DMD::coef(int narg,char** arg)
     
     TYPE0 alpha_ave=0.5*(alpha_min+alpha_max);
     TYPE0 beta_ave=0.5*(beta_min+beta_max);
-    alpha_ave=20.0;
+    alpha_ave=30.0;
     beta_ave=1.0/sqrt(alpha_ave);
     for(int i=0;i<tot_natms;i++)
         x[i*4+3]=beta_ave;

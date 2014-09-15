@@ -27,6 +27,9 @@ namespace MAPP_NS {
         
         int pe_idx;
         int stress_idx;
+        char* dof;
+        int dof_n;
+        int id_n;
     public:
         Min(MAPP *);
         virtual ~Min();
@@ -34,6 +37,7 @@ namespace MAPP_NS {
         virtual void run()=0;
         virtual void init()=0;
         virtual void fin()=0;
+        void rectify_f(TYPE0*);
         int max_iter;
         TYPE0 energy_tolerance;
         int** H_dof;

@@ -3,7 +3,7 @@
  Copyright (c) 2013 MIT. All rights reserved.
  --------------------------------------------*/
 #ifdef Read_Style
-    ReadStyle(ReadCFG,cfg)
+ReadStyle(ReadCFG,cfg)
 #else
 #ifndef __MAPP__readCFG__
 #define __MAPP__readCFG__
@@ -42,7 +42,9 @@ namespace MAPP_NS {
         int type_no;
         int x_no;
         int x_d_no;
+        int id_no;
         
+        int curr_id;
         char* ch_buff;
         VecLst* vec_list;
     protected:
@@ -53,3 +55,4 @@ namespace MAPP_NS {
 }
 #endif
 #endif
+

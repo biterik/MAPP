@@ -15,6 +15,7 @@ namespace MAPP_NS {
         int f_n;
         int dim;
         int x_dim;
+        int dof_n;
         
         TYPE0 inner_f_h();
         TYPE0 inner_f_h_s();

@@ -183,7 +183,8 @@ void ThermoDynamics::tail_print()
 
         
         fprintf(output,"\n");
-        fprintf(output,"run time: %lf\n",run_time);
+        fprintf(output,"run time: %lf "
+            "seconds\n",run_time);
     }
         
 }

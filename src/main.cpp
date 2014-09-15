@@ -10,10 +10,11 @@ using namespace MAPP_NS;
 using namespace std;
 int main(int narg, char** arg)
 {
+
     MPI_Init(&narg,&arg);
     MAPP* mapp = new MAPP(narg,arg,MPI_COMM_WORLD);
     delete mapp;
-    MPI_Finalize();
+    MPI_Finalize();    
     
     return EXIT_SUCCESS;
 }

@@ -9,12 +9,14 @@
 #include "memory.h"
 #include "atom_types.h"
 using namespace MAPP_NS;
+enum{TYPE_XD_ID,TYPE_ID_XD,ID_TYPE_XD,ID_XD_TYPE,XD_ID_TYPE,XD_TYPE_ID};
 /*--------------------------------------------
  constructor
  --------------------------------------------*/
 ReadCFG::ReadCFG(MAPP* mapp,int narg,char** args)
 :Read(mapp)
 {
+    curr_id=-1;
     type_no_before_x_d_no=0;
     
     if(narg!=3)
@@ -22,7 +24,7 @@ ReadCFG::ReadCFG(MAPP* mapp,int narg,char** args)
     
     if(atoms->dimension!=3)
         error->abort("in order to read a cfg"
-        " file the box dimension should be 3");
+                     " file the box dimension should be 3");
     
     
     // setup the defaults
@@ -82,15 +84,25 @@ ReadCFG::ReadCFG(MAPP* mapp,int narg,char** args)
     x_no=atoms->find("x");
     x_d_no=atoms->find_exist("x_d");
     type_no=atoms->find("type");
+    id_no=atoms->find("id");
     
-    if(x_d_no>=0)
-        if(type_no<x_d_no)
-            type_no_before_x_d_no=1;
+    if(x_d_no<type_no && type_no<id_no)
+        type_no_before_x_d_no=XD_TYPE_ID;
+    else if(x_d_no<id_no && id_no<type_no)
+        type_no_before_x_d_no=XD_ID_TYPE;
+    else if(id_no<x_d_no && x_d_no<type_no)
+        type_no_before_x_d_no=ID_XD_TYPE;
+    else if(id_no<type_no && type_no<x_d_no)
+        type_no_before_x_d_no=ID_TYPE_XD;
+    else if(type_no<x_d_no && x_d_no<id_no)
+        type_no_before_x_d_no=TYPE_XD_ID;
+    else if(type_no<id_no && id_no<x_d_no)
+        type_no_before_x_d_no=TYPE_ID_XD;
     
     if(x_d_no<0)
-        vec_list=new VecLst(mapp,2,x_no,type_no);
+        vec_list=new VecLst(mapp,3,x_no,type_no,id_no);
     else
-        vec_list=new VecLst(mapp,3,x_no,x_d_no,type_no);
+        vec_list=new VecLst(mapp,4,x_no,x_d_no,type_no,id_no);
     
     
     
@@ -111,8 +123,8 @@ ReadCFG::ReadCFG(MAPP* mapp,int narg,char** args)
     
     if (tot_no!=atoms->tot_natms)
         error->abort("the number of atoms dont match"
-            " recheck your cfg file: %d %d",
-            atoms->tot_natms,tot_no);
+                     " recheck your cfg file: %d %d",
+                     atoms->tot_natms,tot_no);
     
     delete vec_list;
     delete [] line;
@@ -134,9 +146,10 @@ ReadCFG::ReadCFG(MAPP* mapp,int narg,char** args)
     delete [] H_x_d;
     
     delete [] ch_buff;
-   
+    
     if(atoms->my_p_no==0)
         fclose(cfgfile);
+    
 
 }
 /*--------------------------------------------
@@ -380,7 +393,7 @@ void ReadCFG::read_atom()
             delete [] arg;
         return;
     }
-
+    
     
     if (narg!=8 && ext_cfg==0)
         error->abort("wrong format: %s",line);
@@ -438,7 +451,7 @@ void ReadCFG::read_atom()
             atom_types->add_type(mass,arg[1]);
             CREATE1D(buff,6);
             for (int i=0;i<6;i++) buff[i]=0.0;
-
+            
             for (int i=0;i<3;i++)
                 buff[i]=static_cast<TYPE0>(atof(arg[i+2]));
             for (int i=3;i<6;i++)
@@ -461,7 +474,7 @@ void ReadCFG::read_atom()
  --------------------------------------------*/
 void ReadCFG::add_atom_read_x(int t,TYPE0* buff)
 {
-
+    curr_id++;
     TYPE0* x_d;
     CREATE1D(x_d,3);
     
@@ -472,10 +485,10 @@ void ReadCFG::add_atom_read_x(int t,TYPE0* buff)
         while(buff[i]<0)
             buff[i]++;
     }
-
+    
     V3ZERO(x_d);
     // since H is lower triangular
-
+    
     for (int i=0;i<3;i++)
         for (int j=0;j<3;j++)
             x_d[j]+=buff[i+3]*H_x_d[i][j]*R;
@@ -485,30 +498,71 @@ void ReadCFG::add_atom_read_x(int t,TYPE0* buff)
     
     for(int i=0;i<3;i++)
         if(!(atoms->s_lo[i]<=buff[i]
-        && buff[i]<atoms->s_hi[i]))
+             && buff[i]<atoms->s_hi[i]))
             return;
     if(x_d_no<0)
     {
-        memcpy(ch_buff,buff,3*sizeof(TYPE0));
-        memcpy(&ch_buff[3*sizeof(TYPE0)],&t,sizeof(int));
+
+        
+        if(type_no_before_x_d_no==XD_TYPE_ID)
+        {
+            memcpy(ch_buff,buff,3*sizeof(TYPE0));
+            memcpy(&ch_buff[3*sizeof(TYPE0)],&t,sizeof(int));
+            memcpy(&ch_buff[3*sizeof(TYPE0)+sizeof(int)],&curr_id,sizeof(int));
+        }
+        else if(type_no_before_x_d_no==XD_ID_TYPE)
+        {
+            memcpy(ch_buff,buff,3*sizeof(TYPE0));
+            memcpy(&ch_buff[3*sizeof(TYPE0)],&curr_id,sizeof(int));
+            memcpy(&ch_buff[3*sizeof(TYPE0)+sizeof(int)],&t,sizeof(int));
+        }
     }
     else
     {
-        if(type_no_before_x_d_no)
+        if(type_no_before_x_d_no==TYPE_XD_ID)
         {
             memcpy(ch_buff,buff,3*sizeof(TYPE0));
             memcpy(&ch_buff[3*sizeof(TYPE0)],&t,sizeof(int));
             memcpy(&ch_buff[3*sizeof(TYPE0)+sizeof(int)],&buff[3],3*sizeof(TYPE0));
+            memcpy(&ch_buff[6*sizeof(TYPE0)+sizeof(int)],&curr_id,sizeof(int));
         }
-        else
+        else if(type_no_before_x_d_no==TYPE_ID_XD)
+        {
+            memcpy(ch_buff,buff,3*sizeof(TYPE0));
+            memcpy(&ch_buff[3*sizeof(TYPE0)],&t,sizeof(int));
+            memcpy(&ch_buff[3*sizeof(TYPE0)+sizeof(int)],&curr_id,sizeof(int));
+            memcpy(&ch_buff[3*sizeof(TYPE0)+2*sizeof(int)],&buff[3],3*sizeof(TYPE0));
+        }
+        else if(type_no_before_x_d_no==ID_TYPE_XD)
+        {
+            memcpy(ch_buff,buff,3*sizeof(TYPE0));
+            memcpy(&ch_buff[3*sizeof(TYPE0)],&curr_id,sizeof(int));
+            memcpy(&ch_buff[3*sizeof(TYPE0)+sizeof(int)],&t,sizeof(int));
+            memcpy(&ch_buff[3*sizeof(TYPE0)+2*sizeof(int)],&buff[3],3*sizeof(TYPE0));
+        }
+        else if(type_no_before_x_d_no==ID_XD_TYPE)
+        {
+            memcpy(ch_buff,buff,3*sizeof(TYPE0));
+            memcpy(&ch_buff[3*sizeof(TYPE0)],&curr_id,sizeof(int));
+            memcpy(&ch_buff[3*sizeof(TYPE0)+sizeof(int)],&buff[3],3*sizeof(TYPE0));
+            memcpy(&ch_buff[6*sizeof(TYPE0)+sizeof(int)],&t,sizeof(int));
+        }
+        else if(type_no_before_x_d_no==XD_TYPE_ID)
         {
             memcpy(ch_buff,buff,6*sizeof(TYPE0));
             memcpy(&ch_buff[6*sizeof(TYPE0)],&t,sizeof(int));
+            memcpy(&ch_buff[6*sizeof(TYPE0)+sizeof(int)],&curr_id,sizeof(int));
+        }
+        else if(type_no_before_x_d_no==XD_ID_TYPE)
+        {
+            memcpy(ch_buff,buff,6*sizeof(TYPE0));
+            memcpy(&ch_buff[6*sizeof(TYPE0)],&curr_id,sizeof(int));
+            memcpy(&ch_buff[6*sizeof(TYPE0)+sizeof(int)],&t,sizeof(int));
         }
     }
     
     atoms->unpack(ch_buff,0,1,vec_list);
-
+    
 }
 /*--------------------------------------------
  calculates square root of 3x3 matrix
@@ -586,5 +640,3 @@ void ReadCFG::M3sqroot(TYPE0** A,TYPE0** Asq)
         Asq[i][i]+=coef2;
     
 }
-
-

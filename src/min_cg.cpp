@@ -91,9 +91,16 @@ void Min_CG::init()
     x_prev_n=atoms->add<TYPE0>(0,x_dim,"x_prev");
     f_prev_n=atoms->add<TYPE0>(0,x_dim,"f_prev");
     h_n=atoms->add<TYPE0>(0,x_dim,"h");
+
+    id_n=atoms->find("id");
     
+    dof_n=atoms->find_exist("dof");
+    if(dof_n<0)
+        vecs_comm=new VecLst(mapp,7,0,type_n,f_n,x_prev_n,f_prev_n,h_n,id_n);
+    else
+        vecs_comm=new VecLst(mapp,8,0,type_n,f_n,x_prev_n,f_prev_n,h_n,dof_n,id_n);
     
-    vecs_comm=new VecLst(mapp,6,0,type_n,f_n,x_prev_n,f_prev_n,h_n);
+
     vecs_comm->add_update(0);
     atoms->reset_comm(vecs_comm);
     
@@ -144,6 +151,7 @@ void Min_CG::init()
             f[i]=0.0;
         
         forcefield->force_calc(1,energy_stress);
+        rectify_f(f);
         curr_energy=energy_stress[0];
         thermo->update(pe_idx,energy_stress[0]);
         thermo->update(stress_idx,6,&energy_stress[1]);
@@ -193,6 +201,7 @@ void Min_CG::init()
             f[i]=0.0;
         
         forcefield->force_calc(1,energy_stress);
+        rectify_f(f);
         curr_energy=energy_stress[0];
         thermo->update(pe_idx,energy_stress[0]);
         thermo->update(stress_idx,6,&energy_stress[1]);
@@ -299,7 +308,7 @@ void Min_CG::run()
                 f[i]=0.0;
             
             forcefield->force_calc(1,energy_stress);
-            
+            rectify_f(f);
             if(thermo->test_prev_step() || err)
             {
                 thermo->update(pe_idx,energy_stress[0]);
@@ -457,13 +466,17 @@ void Min_CG::run()
             if(thermo->test_prev_step() || err)
             {
                 forcefield->force_calc(1,energy_stress);
+                rectify_f(f);
                 thermo->update(pe_idx,energy_stress[0]);
                 thermo->update(stress_idx,6,&energy_stress[1]);
                 curr_energy=energy_stress[0];
             }
             else
+            {
                 forcefield->force_calc(0,&curr_energy);
-            
+                rectify_f(f);
+            }
+
             if(err)
                 continue;
             

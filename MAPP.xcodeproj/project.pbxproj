@@ -38,6 +38,8 @@
 		277A87FB1974827D00D57402 /* libmpi.1.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 277A87F91974827D00D57402 /* libmpi.1.dylib */; };
 		2795CCE3199170DD00CDDF49 /* ff_eam.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2795CCE1199170DD00CDDF49 /* ff_eam.cpp */; };
 		27AF6AB31998773A00DEE20C /* ff_eam_dmd.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 27AF6AB11998773A00DEE20C /* ff_eam_dmd.cpp */; };
+		27B65A6C19AF837500CA83A8 /* command_displace.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 27B65A6A19AF837500CA83A8 /* command_displace.cpp */; };
+		27B65A6F19AFAE6C00CA83A8 /* command_fix.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 27B65A6D19AFAE6C00CA83A8 /* command_fix.cpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -119,6 +121,10 @@
 		2795CCE2199170DD00CDDF49 /* ff_eam.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ff_eam.h; sourceTree = "<group>"; };
 		27AF6AB11998773A00DEE20C /* ff_eam_dmd.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ff_eam_dmd.cpp; sourceTree = "<group>"; };
 		27AF6AB21998773A00DEE20C /* ff_eam_dmd.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ff_eam_dmd.h; sourceTree = "<group>"; };
+		27B65A6A19AF837500CA83A8 /* command_displace.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = command_displace.cpp; sourceTree = "<group>"; };
+		27B65A6B19AF837500CA83A8 /* command_displace.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = command_displace.h; sourceTree = "<group>"; };
+		27B65A6D19AFAE6C00CA83A8 /* command_fix.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = command_fix.cpp; sourceTree = "<group>"; };
+		27B65A6E19AFAE6C00CA83A8 /* command_fix.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = command_fix.h; sourceTree = "<group>"; };
 		27D0418B1978AD2C001E2957 /* write_styles.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = write_styles.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -220,6 +226,10 @@
 				2725B52B1979A95E00F5183C /* command_styles.h */,
 				2725B52C1979A98900F5183C /* command_change_box.cpp */,
 				2725B52D1979A98900F5183C /* command_change_box.h */,
+				27B65A6A19AF837500CA83A8 /* command_displace.cpp */,
+				27B65A6B19AF837500CA83A8 /* command_displace.h */,
+				27B65A6D19AFAE6C00CA83A8 /* command_fix.cpp */,
+				27B65A6E19AFAE6C00CA83A8 /* command_fix.h */,
 			);
 			path = src;
 			sourceTree = "<group>";
@@ -277,6 +287,7 @@
 			files = (
 				277A87EA1974822D00D57402 /* md.cpp in Sources */,
 				27AF6AB31998773A00DEE20C /* ff_eam_dmd.cpp in Sources */,
+				27B65A6F19AFAE6C00CA83A8 /* command_fix.cpp in Sources */,
 				277A87E91974822D00D57402 /* MAPP.cpp in Sources */,
 				277A87F41974822D00D57402 /* thermo_dynamics.cpp in Sources */,
 				277A87EE1974822D00D57402 /* min_cg.cpp in Sources */,
@@ -289,6 +300,7 @@
 				270B59B31976F4CA00640B29 /* write.cpp in Sources */,
 				277A87E71974822D00D57402 /* line_search.cpp in Sources */,
 				2725B52E1979A98900F5183C /* command_change_box.cpp in Sources */,
+				27B65A6C19AF837500CA83A8 /* command_displace.cpp in Sources */,
 				2795CCE3199170DD00CDDF49 /* ff_eam.cpp in Sources */,
 				277A87F31974822D00D57402 /* read_cfg.cpp in Sources */,
 				277A87E61974822D00D57402 /* ff_lj.cpp in Sources */,

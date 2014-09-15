@@ -8,7 +8,6 @@ using namespace MAPP_NS;
 
 /*--------------------------------------------
  constructor
- write cfg 1000 dump x
  --------------------------------------------*/
 WriteCFG::WriteCFG(MAPP* mapp,int narg
 ,char** arg) : Write(mapp)
@@ -142,6 +141,9 @@ void WriteCFG::write_file(int stp)
         if(sorting)
         {
             int icomp=0;
+            if(mapp->mode==DMD)
+                fprintf(fp,"auxiliary[%d] = alpha [reduced unit]\n",icomp++);
+            
             for(int i=1;i<no_vecs-2;i++)
             {
                 if(atoms->vectors[vec_list[i]].dim>1)
@@ -190,6 +192,10 @@ void WriteCFG::write_file(int stp)
         else
         {
             int icomp=0;
+            if(mapp->mode==DMD)
+                fprintf(fp,"auxiliary[%d] = alpha [reduced unit]\n",icomp++);
+            
+                
             for(int i=1;i<no_vecs-1;i++)
             {
                 if(atoms->vectors[vec_list[i]].dim>1)

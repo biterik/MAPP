@@ -127,12 +127,22 @@ void Min_LBFGS::init()
     f_prev_n=atoms->add<TYPE0>(0,x_dim,"f_prev");
     h_n=atoms->add<TYPE0>(0,x_dim,"h");
     
-    
+    dof_n=atoms->find_exist("dof");
+    id_n=atoms->find("id");
+
     int* tmp_lst;
-    CREATE1D(tmp_lst,2*m_it+6);
     int icurs=0;
+    if(dof_n<0)
+        CREATE1D(tmp_lst,2*m_it+7);
+    else
+    {
+        CREATE1D(tmp_lst,2*m_it+8);
+        tmp_lst[icurs++]=dof_n;
+    }
+    
     tmp_lst[icurs++]=0;
     tmp_lst[icurs++]=type_n;
+    tmp_lst[icurs++]=id_n;
     tmp_lst[icurs++]=f_n;
     for (int i=0;i<m_it;i++)
     {
@@ -207,6 +217,7 @@ void Min_LBFGS::init()
             f[i]=0.0;
         
         forcefield->force_calc(1,energy_stress);
+        rectify_f(f);
         curr_energy=energy_stress[0];
         thermo->update(pe_idx,energy_stress[0]);
         thermo->update(stress_idx,6,&energy_stress[1]);
@@ -257,6 +268,7 @@ void Min_LBFGS::init()
             f[i]=0.0;
         
         forcefield->force_calc(1,energy_stress);
+        rectify_f(f);
         curr_energy=energy_stress[0];
         thermo->update(pe_idx,energy_stress[0]);
         thermo->update(stress_idx,6,&energy_stress[1]);
@@ -432,7 +444,7 @@ void Min_LBFGS::run()
                 f[i]=0.0;
             
             forcefield->force_calc(1,energy_stress);
-            
+            rectify_f(f);
             if(thermo->test_prev_step() || err)
             {
                 thermo->update(pe_idx,energy_stress[0]);
@@ -661,12 +673,16 @@ void Min_LBFGS::run()
             if(thermo->test_prev_step() || err)
             {
                 forcefield->force_calc(1,energy_stress);
+                rectify_f(f);
                 thermo->update(pe_idx,energy_stress[0]);
                 thermo->update(stress_idx,6,&energy_stress[1]);
                 curr_energy=energy_stress[0];
             }
             else
+            {
                 forcefield->force_calc(0,&curr_energy);
+                rectify_f(f);
+            }
             
             if(err)
                 continue;
