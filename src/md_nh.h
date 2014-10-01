@@ -70,6 +70,7 @@ namespace MAPP_NS {
         int temp_idx;
         int stress_idx;
         int omega_denom;
+        int x_dim,x_d_dim,f_dim,dof_dim;
     protected:
     public:
         MD_NH(MAPP *,int,char**);

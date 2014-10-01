@@ -55,22 +55,30 @@ MD_NH::MD_NH(MAPP* mapp,int narg,char** arg)
     {
         
         iarg++;
-        if(!strcmp(arg[iarg],"iso"))
+        if(!strcmp(arg[iarg],"xyz")
+           || !strcmp(arg[iarg],"xzy")
+           || !strcmp(arg[iarg],"yzx")
+           || !strcmp(arg[iarg],"yxz")
+           || !strcmp(arg[iarg],"zxy")
+           || !strcmp(arg[iarg],"zyx"))
         {
             chk_stress=XYZ;
             iarg++;
         }
-        else if(!strcmp(arg[iarg],"yz"))
+        else if(!strcmp(arg[iarg],"yz")
+                || !strcmp(arg[iarg],"zy"))
         {
             chk_stress=YZ;
             iarg++;
         }
-        else if(!strcmp(arg[iarg],"zx"))
+        else if(!strcmp(arg[iarg],"zx")
+                || !strcmp(arg[iarg],"xz"))
         {
             chk_stress=ZX;
             iarg++;
         }
-        else if(!strcmp(arg[iarg],"xy"))
+        else if(!strcmp(arg[iarg],"xy")
+                || !strcmp(arg[iarg],"yx"))
         {
             chk_stress=XY;
             iarg++;
@@ -419,21 +427,26 @@ void MD_NH::init()
         +chk_tau[1]*atoms->tot_natms
         +chk_tau[2]*atoms->tot_natms;
     }
+
+    x_dim=atoms->vectors[x_n].dim;
+    x_d_dim=atoms->vectors[x_d_n].dim;
+    f_dim=atoms->vectors[f_n].dim;
     
     if(dof_n!=-1)
     {
         char* dof;
         atoms->vectors[dof_n].ret(dof);
-
+        dof_dim=atoms->vectors[dof_n].dim;
+        
         int tmp_0=0;
         int tmp_1=0;
         int tmp_2=0;
         
         for(int i=0;i<atoms->natms;i++)
         {
-            if(dof[3*i]=='1') tmp_0++;
-            if(dof[3*i+1]=='1') tmp_1++;
-            if(dof[3*i+2]=='1') tmp_2++;
+            if(dof[dof_dim*i]==1) tmp_0++;
+            if(dof[dof_dim*i+1]==1) tmp_1++;
+            if(dof[dof_dim*i+2]==1) tmp_2++;
         }
         
         
@@ -443,14 +456,16 @@ void MD_NH::init()
         MPI_Allreduce(&tmp_0,&tmp_all_0,1,MPI_INT,MPI_SUM,world);
         MPI_Allreduce(&tmp_1,&tmp_all_1,1,MPI_INT,MPI_SUM,world);
         MPI_Allreduce(&tmp_2,&tmp_all_2,1,MPI_INT,MPI_SUM,world);
-        
+
         no_dof-=tmp_all_0+tmp_all_1+tmp_all_2;
         
         if(chk_stress)
             omega_denom-=chk_tau[0]*tmp_all_0
             +chk_tau[1]*tmp_all_1+chk_tau[2]*tmp_all_2;
         
+       
     }
+    
         
     vecs_comm->add_update(x_n);
     atoms->reset_comm(vecs_comm);
@@ -753,11 +768,9 @@ void MD_NH::update_H(TYPE0 dlt)
  --------------------------------------------*/
 void MD_NH::update_x(TYPE0 dlt)
 {
-    //TYPE0* x=(TYPE0*)atoms->vectors[x_n].ret_vec();
     TYPE0* x;
     atoms->vectors[x_n].ret(x);
     
-    //TYPE0* x_d=(TYPE0*)atoms->vectors[x_d_n].ret_vec();
     TYPE0* x_d;
     atoms->vectors[x_d_n].ret(x_d);
     
@@ -766,7 +779,7 @@ void MD_NH::update_x(TYPE0 dlt)
             atoms->vectors[dof_n].ret(dof);
     
     int natms=atoms->natms;
-    int icomp;
+    int icomp,iicomp,iiicomp;
     x_ave[0]=x_ave[1]=x_ave[2]=0.0;
     x_ave_tot[0]=x_ave_tot[1]=x_ave_tot[2]=0.0;
     
@@ -776,7 +789,9 @@ void MD_NH::update_x(TYPE0 dlt)
         TYPE0 xt[3];
         for(int i=0;i<natms;i++)
         {
-            icomp=3*i;
+            icomp=x_dim*i;
+            iicomp=x_d_dim*i;
+            
             x_ave[0]-=x[icomp];
             x_ave[1]-=x[icomp+1];
             x_ave[2]-=x[icomp+2];
@@ -788,9 +803,9 @@ void MD_NH::update_x(TYPE0 dlt)
             +x[icomp+2]*M1[2][1];
             xt[2]=x[icomp+2]*M1[2][2];
             
-            xt[0]+=x_d[icomp]*dlt;
-            xt[1]+=x_d[icomp+1]*dlt;
-            xt[2]+=x_d[icomp+2]*dlt;
+            xt[0]+=x_d[iicomp]*dlt;
+            xt[1]+=x_d[iicomp+1]*dlt;
+            xt[2]+=x_d[iicomp+2]*dlt;
             
             if(dof_n==-1)
             {
@@ -803,16 +818,17 @@ void MD_NH::update_x(TYPE0 dlt)
             }
             else
             {
-                if(dof[icomp]=='0')
+                iiicomp=dof_dim*i;
+                if(dof[iiicomp]==0)
                     x[icomp]=xt[0]*M2[0][0]
                     +xt[1]*M2[1][0]
                     +xt[2]*M2[2][0];
                 
-                if(dof[icomp+1]=='0')
+                if(dof[iiicomp+1]==0)
                     x[icomp+1]=xt[1]*M2[1][1]
                     +xt[2]*M2[2][1];
                 
-                if(dof[icomp+2]=='0')
+                if(dof[iiicomp+2]==0)
                     x[icomp+2]=xt[2]*M2[2][2];
                     
             }
@@ -826,13 +842,14 @@ void MD_NH::update_x(TYPE0 dlt)
     {
         for(int i=0;i<natms;i++)
         {
-            icomp=3*i;
-            x[icomp]+=x_d[icomp]*dlt;
-            x[icomp+1]+=x_d[icomp+1]*dlt;
-            x[icomp+2]+=x_d[icomp+2]*dlt;
-            x_ave[0]+=x_d[icomp]*dlt;
-            x_ave[1]+=x_d[icomp+1]*dlt;
-            x_ave[2]+=x_d[icomp+2]*dlt;
+            icomp=x_dim*i;
+            iicomp=x_d_dim*i;
+            x[icomp]+=x_d[iicomp]*dlt;
+            x[icomp+1]+=x_d[iicomp+1]*dlt;
+            x[icomp+2]+=x_d[iicomp+2]*dlt;
+            x_ave[0]+=x_d[iicomp]*dlt;
+            x_ave[1]+=x_d[iicomp+1]*dlt;
+            x_ave[2]+=x_d[iicomp+2]*dlt;
         }
     }
     
@@ -843,7 +860,7 @@ void MD_NH::update_x(TYPE0 dlt)
     
     for(int i=0;i<natms;i++)
     {
-        icomp=3*i;
+        icomp=x_dim*i;
         x[icomp]-=x_ave_tot[0];
         x[icomp+1]-=x_ave_tot[1];
         x[icomp+2]-=x_ave_tot[2];
@@ -876,29 +893,31 @@ void MD_NH::update_x_d(TYPE0 dlt)
     TYPE0* mass=atom_types->mass;
     int natms=atoms->natms;
     TYPE0 temp[6];
-    int icomp;
+    int icomp,iicomp,iiicomp;
     
     for(int i=0;i<6;i++)
         temp[i]=0.0;
     
     for(int i=0;i<natms;i++)
     {
-        icomp=3*i;
+        icomp=x_d_dim*i;
+        iicomp=f_dim*i;
         
-        x_d[icomp]+=f[icomp]*dlt/mass[type[i]];
-        x_d[icomp+1]+=f[icomp+1]*dlt/mass[type[i]];
-        x_d[icomp+2]+=f[icomp+2]*dlt/mass[type[i]];
+        x_d[icomp]+=f[iicomp]*dlt/mass[type[i]];
+        x_d[icomp+1]+=f[iicomp+1]*dlt/mass[type[i]];
+        x_d[icomp+2]+=f[iicomp+2]*dlt/mass[type[i]];
+        
         if(dof_n!=-1)
         {
-            if(dof[icomp]=='1')
+            iiicomp=dof_dim*i;
+            if(dof[iiicomp]==1)
                 x_d[icomp]=0.0;
-            if(dof[icomp+1]=='1')
+            if(dof[iiicomp+1]==1)
                 x_d[icomp+1]=0.0;
-            if(dof[icomp+2]=='1')
+            if(dof[iiicomp+2]==1)
                 x_d[icomp+2]=0.0;
             
         }
-        
         
         temp[0]+=mass[type[i]]*x_d[icomp]*x_d[icomp];
         temp[1]+=mass[type[i]]*x_d[icomp+1]*x_d[icomp+1];
@@ -906,7 +925,6 @@ void MD_NH::update_x_d(TYPE0 dlt)
         temp[3]+=mass[type[i]]*x_d[icomp+1]*x_d[icomp+2];
         temp[4]+=mass[type[i]]*x_d[icomp]*x_d[icomp+2];
         temp[5]+=mass[type[i]]*x_d[icomp]*x_d[icomp+1];
-        
 
     }
     
@@ -982,8 +1000,9 @@ void MD_NH::update_NH_T(TYPE0 dlt)
     //TYPE0* x_d=(TYPE0*)atoms->vectors[x_d_n].ret_vec();
     TYPE0* x_d;
     atoms->vectors[x_d_n].ret(x_d);
-    for (int i=0;i<3*natoms;i++)
-        x_d[i]*=velfac;
+    for (int i=0;i<natoms;i++)
+        for (int j=0;j<3;j++)
+            x_d[i*x_d_dim+j]*=velfac;
     
 }
 /*--------------------------------------------
@@ -1097,7 +1116,7 @@ void MD_NH::update_x_d_xpnd(TYPE0 dlt)
     TYPE0* mass=atom_types->mass;
     
     int natms=atoms->natms;
-    int icomp;
+    int icomp,iicomp;
     
     fac[0]=exp(0.5*dlt*(omega_d[0]+MTK_2));
     fac[1]=exp(0.5*dlt*(omega_d[1]+MTK_2));
@@ -1107,7 +1126,7 @@ void MD_NH::update_x_d_xpnd(TYPE0 dlt)
         temp[i]=0.0;
     for (int i=0;i<natms;i++)
     {
-        icomp=3*i;
+        icomp=x_d_dim*i;
         x_d[icomp]*=fac[0];
         x_d[icomp+1]*=fac[1];
         x_d[icomp+2]*=fac[2];
@@ -1122,9 +1141,10 @@ void MD_NH::update_x_d_xpnd(TYPE0 dlt)
         
         if(dof_n!=-1)
         {
-            if(dof[icomp]=='1') x_d[icomp]=0.0;
-            if(dof[icomp+1]=='1') x_d[icomp+1]=0.0;
-            if(dof[icomp+2]=='1') x_d[icomp+2]=0.0;
+            iicomp=dof_dim*i;
+            if(dof[iicomp]==1) x_d[icomp]=0.0;
+            if(dof[iicomp+1]==1) x_d[icomp+1]=0.0;
+            if(dof[iicomp+2]==1) x_d[icomp+2]=0.0;
         }
         
         temp[0]+=mass[type[i]]*x_d[icomp]*x_d[icomp];
@@ -1146,10 +1166,9 @@ void MD_NH::update_x_d_xpnd(TYPE0 dlt)
  --------------------------------------------*/
 void MD_NH::zero_f()
 {
-    //TYPE0* f=(TYPE0*)atoms->vectors[f_n].ret_vec();
     TYPE0* f;
     atoms->vectors[f_n].ret(f);
-    for(int i=0;i<atoms->natms*3;i++)
+    for(int i=0;i<atoms->natms*f_dim;i++)
         f[i]=0.0;
 }
 /*--------------------------------------------
@@ -1168,26 +1187,24 @@ void MD_NH::create_vel(int seed,TYPE0 temperature)
     TYPE0* mass=atom_types->mass;
     
     int natms=atoms->natms;
-    int icomp;
+    int icomp,iicomp;
     TYPE0* temp;
     CREATE1D(temp,6);
     for(int i=0;i<6;i++)
         temp[i]=0.0;
     
-
-    
-    
     class Random* random=new Random(mapp,seed);
     for(int i=0;i<natms;i++)
     {
-        icomp=3*i;
+        icomp=x_d_dim*i;
         for(int j=0;j<3;j++)
             x_d[icomp+j]=random->gaussian()/(sqrt(mass[type[i]]));
         if(dof_n!=-1)
         {
-            if(dof[icomp]=='1') x_d[icomp]=0.0;
-            if(dof[icomp+1]=='1') x_d[icomp+1]=0.0;
-            if(dof[icomp+2]=='1') x_d[icomp+2]=0.0;
+            iicomp=dof_dim*i;
+            if(dof[iicomp]==1) x_d[icomp]=0.0;
+            if(dof[iicomp+1]==1) x_d[icomp+1]=0.0;
+            if(dof[iicomp+2]==1) x_d[icomp+2]=0.0;
         }
 
         temp[0]+=mass[type[i]]*x_d[icomp]*x_d[icomp];
@@ -1213,8 +1230,9 @@ void MD_NH::create_vel(int seed,TYPE0 temperature)
     TYPE0 ke_des=(boltz*no_dof)*temperature;
     TYPE0 factor=sqrt(ke_des/ke_cur);
     TYPE0 facsq=ke_des/ke_cur;
-    for(int i=0;i<3*natms;i++)
-        x_d[i]*=factor;
+    for(int i=0;i<natms;i++)
+        for(int j=0;j<3;j++)
+            x_d[i*x_d_dim+j]*=factor;
     
     for(int i=0;i<6;i++)
         ke_curr[i]*=facsq;
@@ -1229,8 +1247,7 @@ void MD_NH::create_vel(int seed,TYPE0 temperature)
  --------------------------------------------*/
 void MD_NH::init_vel(TYPE0 temperature)
 {
-    //TYPE0* x_d=(TYPE0*)atoms->vectors[atoms->find("x_d")].ret_vec();
-    //int* type =(int*)atoms->vectors[atoms->find("type")].ret_vec();
+
     TYPE0* x_d;
     atoms->vectors[atoms->find("x_d")].ret(x_d);
     int* type;
@@ -1246,7 +1263,7 @@ void MD_NH::init_vel(TYPE0 temperature)
     
     for(int i=0;i<natms;i++)
     {
-        icomp=3*i;
+        icomp=x_d_dim*i;
         temp[0]+=mass[type[i]]*x_d[icomp]*x_d[icomp];
         temp[1]+=mass[type[i]]*x_d[icomp+1]*x_d[icomp+1];
         temp[2]+=mass[type[i]]*x_d[icomp+2]*x_d[icomp+2];
@@ -1272,8 +1289,9 @@ void MD_NH::init_vel(TYPE0 temperature)
     TYPE0 factor=sqrt(ke_des/ke_cur);
     TYPE0 facsq=factor*factor;
     
-    for(int i=0;i<3*natms;i++)
-        x_d[i]*=factor;
+    for(int i=0;i<natms;i++)
+        for(int j=0;j<3;j++)
+            x_d[i*x_d_dim+j]*=factor;
     
     for(int i=0;i<6;i++)
         ke_curr[i]*=facsq;
@@ -1331,5 +1349,5 @@ void MD_NH::couple()
         ke_curr[0]=ke_curr[1]=tmp;
 
     }
-
 }
+
