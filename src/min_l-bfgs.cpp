@@ -105,10 +105,14 @@ void Min_LBFGS::init()
     CREATE1D(s_list,m_it);
     CREATE1D(y_list,m_it);
     x_dim=atoms->vectors[0].dim;
-    type_n=atoms->find("type");
+    if(mapp->mode==DMD)
+        type_n=atoms->find("c");
+    else
+        type_n=atoms->find("type");
+
     f_n=atoms->find_exist("f");
     if(f_n<0)
-        f_n=atoms->add<TYPE0>(0, 3,"f");
+        f_n=atoms->add<TYPE0>(0,x_dim,"f");
     
     for (int i=0;i<m_it;i++)
     {

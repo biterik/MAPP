@@ -22,6 +22,10 @@ namespace MAPP_NS {
         virtual void coef(int,char**){};
         TYPE0* cut_sq;
         TYPE0* cut_sk_sq;
+        
+        virtual void create_2nd_neigh_lst(){};
+        virtual TYPE0 calc_g(int,TYPE0,TYPE0*,TYPE0*)=0;
+        virtual void calc_y(){};
     };
 }
 #endif

@@ -1,10 +1,3 @@
-//
-//  min_cg.cpp
-//  MAPP
-//
-//  Created by Sina on 7/5/14.
-//  Copyright (c) 2014 Li Group/Sina. All rights reserved.
-//
 #include "min_cg.h"
 #include "neighbor.h"
 #include "ff.h"
@@ -87,7 +80,12 @@ void Min_CG::init()
     f_n=atoms->find_exist("f");
     if(f_n<0)
         f_n=atoms->add<TYPE0>(0,x_dim,"f");
-    type_n=atoms->find("type");
+    
+    if(mapp->mode==DMD)
+        type_n=atoms->find("c");
+    else
+        type_n=atoms->find("type");
+    
     x_prev_n=atoms->add<TYPE0>(0,x_dim,"x_prev");
     f_prev_n=atoms->add<TYPE0>(0,x_dim,"f_prev");
     h_n=atoms->add<TYPE0>(0,x_dim,"h");
@@ -99,11 +97,9 @@ void Min_CG::init()
         vecs_comm=new VecLst(mapp,7,0,type_n,f_n,x_prev_n,f_prev_n,h_n,id_n);
     else
         vecs_comm=new VecLst(mapp,8,0,type_n,f_n,x_prev_n,f_prev_n,h_n,dof_n,id_n);
-    
 
     vecs_comm->add_update(0);
     atoms->reset_comm(vecs_comm);
-    
 
     
     forcefield->init();
@@ -135,7 +131,6 @@ void Min_CG::init()
         line_search->B_prev=B_prev;
     }
     line_search->chng_box=chng_box;
-    
     TYPE0* f;
     TYPE0* energy_stress;
     CREATE1D(energy_stress,dim*(dim+1)/2+1);
@@ -211,6 +206,8 @@ void Min_CG::init()
         write->init();
     thermo->init();
     delete [] energy_stress;
+
+
 }
 /*--------------------------------------------
  min
@@ -413,6 +410,7 @@ void Min_CG::run()
     }
     else
     {
+        
         atoms->vectors[h_n].ret(h);
         atoms->vectors[f_n].ret(f);
         memcpy(h,f,x_dim*atoms->natms*sizeof(TYPE0));
@@ -446,8 +444,10 @@ void Min_CG::run()
             
             if(write!=NULL)
                 write->write();
+            
             thermo->thermo_print();
             err=line_search->line_min(curr_energy,alpha);
+            
             if(err==LS_S)
                 if(prev_energy-curr_energy<energy_tolerance)
                     err=MIN_F_TOLERANCE;
@@ -515,7 +515,6 @@ void Min_CG::run()
  --------------------------------------------*/
 void Min_CG::fin()
 {
-    //printf("alpha_min\n");
     forcefield->fin();
     neighbor->fin();
     
@@ -552,6 +551,7 @@ void Min_CG::fin()
     
     if(write!=NULL)
         write->fin();
+    
     thermo->fin();
     errors();
     

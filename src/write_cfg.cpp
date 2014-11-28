@@ -76,10 +76,14 @@ WriteCFG::WriteCFG(MAPP* mapp,int narg
     if(vec_list[0]!=0)
         error->abort("vector x should be included");
     
-    type_cmp=atoms->find("type");
-    GROW(vec_list,no_vecs,no_vecs+1);
-    vec_list[no_vecs]=type_cmp;
-    no_vecs++;
+    if(mapp->mode==MD)
+    {
+        type_cmp=atoms->find("type");
+        GROW(vec_list,no_vecs,no_vecs+1);
+        vec_list[no_vecs]=type_cmp;
+        no_vecs++;
+    }
+
     
     if(sorting)
     {
@@ -88,7 +92,6 @@ WriteCFG::WriteCFG(MAPP* mapp,int narg
         vec_list[no_vecs]=id_cmp;
         no_vecs++;
     }
-    
     
 }
 /*--------------------------------------------
@@ -107,7 +110,17 @@ WriteCFG::~WriteCFG()
  --------------------------------------------*/
 void WriteCFG::write_file(int stp)
 {
-
+    if(mapp->mode==MD)
+        write_file_md(stp);
+    else
+        write_file_dmd(stp);
+}
+/*--------------------------------------------
+ write file
+ --------------------------------------------*/
+void WriteCFG::write_file_md(int stp)
+{
+    
     atoms->x2s_no_correction(atoms->natms);
     
     for(int i=0;i<no_vecs;i++)
@@ -133,7 +146,7 @@ void WriteCFG::write_file(int stp)
                 fprintf(fp,"H0(%d,%d) = %lf A\n",i+1,j+1,atoms->H[i][j]);
         
         fprintf(fp,".NO_VELOCITY.\n");
-
+        
         fprintf(fp,"entry_count = %d\n",tot_dim);
         
         
@@ -141,8 +154,6 @@ void WriteCFG::write_file(int stp)
         if(sorting)
         {
             int icomp=0;
-            if(mapp->mode==DMD)
-                fprintf(fp,"auxiliary[%d] = alpha [reduced unit]\n",icomp++);
             
             for(int i=1;i<no_vecs-2;i++)
             {
@@ -174,7 +185,7 @@ void WriteCFG::write_file(int stp)
             for(int itype=0;itype<atom_types->no_types;itype++)
             {
                 fprintf(fp,"%lf \n%s \n",atom_types->mass[itype]
-                       ,atom_types->atom_names[itype]);
+                        ,atom_types->atom_names[itype]);
                 for(int i=0;i<tot_natms;i++)
                 {
                     if(type[sort[i]]==itype)
@@ -192,10 +203,7 @@ void WriteCFG::write_file(int stp)
         else
         {
             int icomp=0;
-            if(mapp->mode==DMD)
-                fprintf(fp,"auxiliary[%d] = alpha [reduced unit]\n",icomp++);
             
-                
             for(int i=1;i<no_vecs-1;i++)
             {
                 if(atoms->vectors[vec_list[i]].dim>1)
@@ -219,7 +227,7 @@ void WriteCFG::write_file(int stp)
             for(int itype=0;itype<atom_types->no_types;itype++)
             {
                 fprintf(fp,"%lf \n%s \n",atom_types->mass[itype]
-                       ,atom_types->atom_names[itype]);
+                        ,atom_types->atom_names[itype]);
                 for(int i=0;i<tot_natms;i++)
                 {
                     if(type[i]==itype)
@@ -240,4 +248,147 @@ void WriteCFG::write_file(int stp)
     
     atoms->s2x(atoms->natms);
 }
+/*--------------------------------------------
+ write file
+ --------------------------------------------*/
+void WriteCFG::write_file_dmd(int stp)
+{
+    
+    atoms->x2s_no_correction(atoms->natms);
+    
+    for(int i=0;i<no_vecs;i++)
+        atoms->vectors[vec_list[i]].gather_dump();
+    
+    
+    FILE* fp=NULL;
+    
+    if(atoms->my_p_no==0)
+    {
+        char* filename;
+        CREATE1D(filename,MAXCHAR);
+        sprintf (filename, "%s.%08d.cfg",file_name,stp);
+        fp=fopen(filename,"w");
+        delete [] filename;
+        
+        // write the header
+        fprintf(fp,"Number of particles = %d\n",atoms->tot_natms);
+        fprintf(fp,"A = 1 Angstrom (basic length-scale)\n");
+        
+        for(int i=0;i<3;i++)
+            for(int j=0;j<3;j++)
+                fprintf(fp,"H0(%d,%d) = %lf A\n",i+1,j+1,atoms->H[i][j]);
+        
+        fprintf(fp,".NO_VELOCITY.\n");
+        
+        fprintf(fp,"entry_count = %d\n",tot_dim);
+        
+        
+        // write the body
+        if(sorting)
+        {
+            int icomp=0;
+            int x_dim=atoms->vectors[0].dim-3;
+            if(x_dim==1)
+            {
+                fprintf(fp,"auxiliary[%d] = alpha [reduced unit]\n",icomp++);
+            }
+            else if(x_dim>1)
+            {
+                for(int idim=0;idim<x_dim;idim++)
+                    fprintf(fp,"auxiliary[%d] = alpha_%d [reduced unit]\n",icomp++,idim);
+            }
+            
+
+            for(int i=1;i<no_vecs-1;i++)
+            {
+                if(atoms->vectors[vec_list[i]].dim>1)
+                {
+                    for(int idim=0;idim<atoms->vectors[vec_list[i]].dim;idim++)
+                        fprintf(fp,"auxiliary[%d] = %s_%d [reduced unit]\n"
+                                ,icomp++,atoms->vectors[vec_list[i]].name,idim);
+                }
+                else
+                {
+                    fprintf(fp,"auxiliary[%d] = %s [reduced unit]\n"
+                            ,icomp++,atoms->vectors[vec_list[i]].name);
+                }
+                
+            }
+            
+            int* id;
+            int tot_natms=atoms->tot_natms;
+            atoms->vectors[id_cmp].ret_dump(id);
+            int* sort;
+            CREATE1D(sort,tot_natms);
+            for(int i=0;i<tot_natms;i++)
+                sort[id[i]]=i;
+            
+            for(int itype=0;itype<atom_types->no_types;itype++)
+                fprintf(fp,"%lf \n%s \n",atom_types->mass[itype]
+                        ,atom_types->atom_names[itype]);
+            
+            
+            
+            for(int i=0;i<tot_natms;i++)
+            {
+                for(int j=0;j<no_vecs-1;j++)
+                    atoms->vectors[vec_list[j]].print_dump(fp,sort[i]);
+                fprintf(fp,"\n");
+            }
+            
+            
+            if(tot_natms)
+                delete [] sort;
+        }
+        else
+        {
+            int icomp=0;
+            int x_dim=atoms->vectors[0].dim-3;
+            if(x_dim==1)
+            {
+                fprintf(fp,"auxiliary[%d] = alpha [reduced unit]\n",icomp++);
+            }
+            else if(x_dim>1)
+            {
+                for(int idim=0;idim<x_dim;idim++)
+                    fprintf(fp,"auxiliary[%d] = alpha_%d [reduced unit]\n",icomp++,idim);
+            }
+            
+            for(int i=1;i<no_vecs;i++)
+            {
+                if(atoms->vectors[vec_list[i]].dim>1)
+                {
+                    for(int idim=0;idim<atoms->vectors[vec_list[i]].dim;idim++)
+                        fprintf(fp,"auxiliary[%d] = %s_%d [reduced unit]\n"
+                                ,icomp++,atoms->vectors[vec_list[i]].name,idim);
+                }
+                else
+                {
+                    fprintf(fp,"auxiliary[%d] = %s [reduced unit]\n"
+                            ,icomp++,atoms->vectors[vec_list[i]].name);
+                }
+            }
+            int tot_natms=atoms->tot_natms;
+            
+            for(int itype=0;itype<atom_types->no_types;itype++)
+                fprintf(fp,"%lf \n%s \n",atom_types->mass[itype]
+                        ,atom_types->atom_names[itype]);
+            
+            for(int i=0;i<tot_natms;i++)
+            {
+                for(int j=0;j<no_vecs;j++)
+                    atoms->vectors[vec_list[j]].print_dump(fp,i);
+                fprintf(fp,"\n");
+            }
+        }
+        
+        fclose(fp);
+    }
+    
+    for(int i=0;i<no_vecs;i++)
+        atoms->vectors[vec_list[i]].del_dump();
+    
+    atoms->s2x(atoms->natms);
+}
+
 

@@ -2933,7 +2933,7 @@ VecLst::VecLst(MAPP* mapp,int no_args,...)
         vec_list[i]=va_arg(args,int);
         if(vec_list[i]<0 || vec_list[i] >(atoms->no_vecs-1))
         {
-            error->abort("Error: wrong index for the vectors");
+            error->abort("wrong index for the vectors: %i",vec_list[i]);
         }
         
     }

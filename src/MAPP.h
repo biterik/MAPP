@@ -10,7 +10,7 @@
 #include <stdio.h>
 
 namespace MAPP_NS {
-    enum {MD,DMD};
+    enum {MD,VG,DMD};
     class MAPP {
     private:
     protected:
@@ -30,6 +30,7 @@ namespace MAPP_NS {
         class AtomTypes* atom_types;
         class ThermoDynamics* thermo;
         class Write* write;
+        class Clock* clock;
         FILE* output;
         
         FILE* input_file;
@@ -43,6 +44,7 @@ namespace MAPP_NS {
         void min_style(int,char**);
         void ff_style(int,char**);
         void md_style(int,char**);
+        void clock_style(int,char**);
         void read_style(int,char**);
         void write_style(int,char**);
         void command_style(int,char**);

@@ -587,12 +587,18 @@ void MD_NH::run(int no_stps)
             update_x_d(dt2);
             update_x(dt);
             
+            thermo->start_comm_time();
+            atoms->update_0(1,1,vecs_comm);
+            thermo->stop_comm_time();
+            
             zero_f();
             thermo->thermo_print();
             if(write!=NULL)
                 write->write();
             
+            thermo->start_force_time();
             forcefield->force_calc(1,enst);
+            thermo->stop_force_time();
             
             if(thermo->test_prev_step()|| i==no_stps-1)
             {
@@ -622,6 +628,11 @@ void MD_NH::run(int no_stps)
             update_NH_T(dt2);
             update_x_d(dt2);
             update_x(dt);
+            
+            thermo->start_comm_time();
+            atoms->update_0(0,1,vecs_comm);
+            thermo->stop_comm_time();
+            
             zero_f();
             thermo->thermo_print();
             if(write!=NULL)
@@ -629,7 +640,10 @@ void MD_NH::run(int no_stps)
             
             if(thermo->test_prev_step()|| i==no_stps-1)
             {
+                thermo->start_force_time();
                 forcefield->force_calc(1,&enst[0]);
+                thermo->stop_force_time();
+                
                 thermo->update(stress_idx,6,&enst[1]);
                 thermo->update(pe_idx,enst[0]);
                 thermo->update(ke_idx,ke_cur);
@@ -638,7 +652,9 @@ void MD_NH::run(int no_stps)
             }
             else
             {
+                thermo->start_force_time();
                 forcefield->force_calc(0,&enst[0]);
+                thermo->stop_force_time();
             }
 
             update_x_d(dt2);
@@ -866,10 +882,6 @@ void MD_NH::update_x(TYPE0 dlt)
         x[icomp+2]-=x_ave_tot[2];
     }
 
-    if (chk_stress)
-        atoms->update_0(1,1,vecs_comm);
-    else
-        atoms->update_0(0,1,vecs_comm);
 
 }
 /*--------------------------------------------

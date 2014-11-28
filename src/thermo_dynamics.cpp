@@ -181,12 +181,17 @@ void ThermoDynamics::tail_print()
                 fprintf(output,"-");
         }
 
-        
         fprintf(output,"\n");
         fprintf(output,"run time: %lf "
             "seconds\n",run_time);
+        fprintf(output,"force: %5.2lf "
+                "%% \n",force_time/run_time*100.0);
+        fprintf(output,"comm + neighbor: %5.2lf "
+                "%% \n",comm_time/run_time*100.0);
+        fprintf(output,"other: %5.2lf "
+                "%% \n",(1.0-(comm_time+force_time)/run_time)*100.0);
     }
-        
+    
 }
 /*--------------------------------------------
  initiated before a run
@@ -198,6 +203,35 @@ void ThermoDynamics::init()
     val_print();
     print_step=step_no+step_tally;
     run_time=-MPI_Wtime();
+    force_time=comm_time=0.0;
+}
+/*--------------------------------------------
+ start force time
+ --------------------------------------------*/
+void ThermoDynamics::start_force_time()
+{
+    force_time-=MPI_Wtime();
+}
+/*--------------------------------------------
+ start comm time
+ --------------------------------------------*/
+void ThermoDynamics::start_comm_time()
+{
+    comm_time-=MPI_Wtime();
+}
+/*--------------------------------------------
+ stop force time
+ --------------------------------------------*/
+void ThermoDynamics::stop_force_time()
+{
+    force_time+=MPI_Wtime();
+}
+/*--------------------------------------------
+ stop comm time
+ --------------------------------------------*/
+void ThermoDynamics::stop_comm_time()
+{
+    comm_time+=MPI_Wtime();
 }
 /*--------------------------------------------
  finish after a run

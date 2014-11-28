@@ -362,7 +362,7 @@ namespace MAPP_NS {
 
             for(int i=0;i<no_vecs;i++)
                 if(!strcasecmp(name,vectors[i].name))
-                    error->abort("Duplicate vec name");
+                    error->abort("Duplicate vec name: %s",vectors[i].name);
             
             int type;
             

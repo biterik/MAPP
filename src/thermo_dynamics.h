@@ -47,10 +47,16 @@ namespace MAPP_NS {
         ThermoQuantity* quantities;
         int no_quantities;
         TYPE0 run_time;
-        
+        TYPE0 force_time;
+        TYPE0 comm_time;
     public:
         ThermoDynamics(MAPP*,int,char**);
         ~ThermoDynamics(); 
+        
+        void start_force_time();
+        void stop_force_time();
+        void start_comm_time();
+        void stop_comm_time();
         
         void update(int,TYPE0);
         void update(int,int,TYPE0*);

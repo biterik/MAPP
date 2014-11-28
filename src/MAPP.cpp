@@ -10,6 +10,8 @@
 #include "atom_types.h"
 #include "min.h"
 #include "min_styles.h"
+#include "clock.h"
+#include "clock_styles.h"
 #include "ff.h"
 #include "ff_styles.h"
 #include "md.h"
@@ -51,6 +53,7 @@ MAPP(int narg,char** args,MPI_Comm communicator)
     forcefield=NULL;
     md=NULL;
     min=NULL;
+    clock=NULL;
     write=NULL;
     
     mode=MD;
@@ -192,6 +195,7 @@ void MAPP::command(char* command)
     else if(strcmp(args[0],"read")==0) read_style(narg,args);
     else if(strcmp(args[0],"ff")==0) ff_style(narg,args);
     else if(strcmp(args[0],"min")==0) min_style(narg,args);
+    else if(strcmp(args[0],"clock")==0) clock_style(narg,args);
     else if(strcmp(args[0],"md")==0) md_style(narg,args);
     else if(strcmp(args[0],"write")==0) write_style(narg,args);
     else if(strcmp(args[0],"del_write")==0)
@@ -250,7 +254,7 @@ void MAPP::ff_style(int narg,char** args)
     #include "ff_styles.h"
     else
         error->abort("unknown forcefield: %s"
-        ,args[1]);
+                     ,args[1]);
     
     #undef FF_Style
 }
@@ -281,6 +285,32 @@ void MAPP::min_style(int narg,char** args)
     #undef Min_Style
 }
 /*--------------------------------------------
+ differnt minimization styles
+ --------------------------------------------*/
+void MAPP::clock_style(int narg,char** args)
+{
+    if(narg<2)
+        error->abort("wrong command: %s",args[0]);
+    if(clock!=NULL)
+        delete clock;
+    
+    #define Clock_Style
+    #define ClockStyle(class_name,style_name)   \
+    else if(strcmp(args[1],#style_name)==0)     \
+        {if(clock!=NULL)delete clock;           \
+        clock= new class_name(this,narg,args);  \
+        clock->init();clock->run();clock->fin();\
+        delete clock;clock=NULL;}
+    
+    if(0){}
+    #include "clock_styles.h"
+    else
+        error->abort("wrong style of clock"
+                     ": %s",args[1]);
+    
+    #undef Clock_Style
+}
+/*--------------------------------------------
  differnt MD styles
  --------------------------------------------*/
 void MAPP::md_style(int narg,char** args)
@@ -289,7 +319,7 @@ void MAPP::md_style(int narg,char** args)
         error->abort("wrong command: %s",args[0]);
     
     int nh_xist=0;
-    TYPE0 t_step = 0.0,boltz = 0.0;
+    TYPE0 t_step = 0.0,boltz=0.0;
     if(md!=NULL)
     {
         nh_xist=1;
@@ -405,7 +435,9 @@ void MAPP::change_mode(int narg,char** args)
         error->abort("unknown mode: %s",args[1]);
     if(new_mode==mode)
         return;
+    mode=new_mode;
     
+    /*
     int x_d_n;
     int f_n;
     if(new_mode==DMD && mode==MD)
@@ -418,7 +450,7 @@ void MAPP::change_mode(int narg,char** args)
                 "all the velocity values will be lost\n");
             atoms->del(x_d_n);
         }
-        atoms->vectors[0].change_dimension(4);
+        atoms->vectors[0].change_dimension(3+atom_types->no_types);
         TYPE0* x;
         atoms->vectors[0].ret(x);
         for(int i=0;i<atoms->natms;i++)
@@ -446,7 +478,28 @@ void MAPP::change_mode(int narg,char** args)
     }
     
     mode=new_mode;
+ 
     
+    
+    
+    
+    
+    if(new_mode==VG && mode==MD)
+    {
+        if(atoms->my_p_no==0)
+            fprintf(output,"chnaging the mode from md to vg,"
+            "all the velocity values will be lost\n");
+    }
+    else if(new_mode==MD && mode==VG)
+    {
+        if(atoms->my_p_no==0)
+            fprintf(output,"chnaging the mode from vg to md,"
+            "all the alpha values will be lost\n");
+        atoms->vectors[0].change_dimension(3);
+        atoms->vectors[atoms->find("f")].change_dimension(3);
+        atoms->add<TYPE0>(0,4,"f");
+    }
+     */
 }
 /*--------------------------------------------
  parse a command line:

@@ -1,7 +1,6 @@
-
-
 #include "line_search.h"
 #include "ff.h"
+#include "atom_types.h"
 using namespace std;
 using namespace MAPP_NS;
 /*--------------------------------------------
@@ -213,8 +212,25 @@ int LineSearch_BackTrack::line_min(TYPE0& nrgy,TYPE0& alph)
     TYPE0 alpha_m;
     TYPE0 max_h;
     TYPE0 max_h_tot;
+    TYPE0 min_h;
+    TYPE0 min_h_tot=0;
     TYPE0 current_energy,ideal_energy;
     TYPE0* h;
+    TYPE0* x;
+    
+    if(mapp->mode==DMD)
+    {
+        atoms->vectors[0].ret(x);
+        min_h=99999999999999;
+        for(int i=0;i<atoms->natms;i++)
+            for(int j=0;j<atom_types->no_types;j++)
+                min_h=MIN(min_h,x[i*(3+atom_types->no_types)+3+j]);
+        MPI_Allreduce(&min_h,&min_h_tot,1,MPI_TYPE0,MPI_MIN,world);
+        min_h_tot*=0.99;
+        
+        alpha_min=MIN(alpha_min,min_h_tot);
+    }
+    
     
     
     if(chng_box)
@@ -242,7 +258,6 @@ int LineSearch_BackTrack::line_min(TYPE0& nrgy,TYPE0& alph)
             return LS_F_GRAD0;
         
         alpha_m=MIN(alpha_max,max_h_tot);
-        
         if(alpha_m<=alpha_min)
             return LS_F_ALPHAMIN;
         
@@ -287,7 +302,6 @@ int LineSearch_BackTrack::line_min(TYPE0& nrgy,TYPE0& alph)
             return LS_F_GRAD0;
         
         alpha_m=MIN(alpha_max,max_h_tot);
-
         if(alpha_m<=alpha_min)
             return LS_F_ALPHAMIN;
         

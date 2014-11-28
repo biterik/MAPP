@@ -83,7 +83,8 @@ void Neighbor::init()
         CREATE1D(s_tmp,d);
     }
 
-    type_n=atoms->find("type");
+    if(mapp->mode==MD)
+        type_n=atoms->find("type");
     create_bin_list();
 }
 /*--------------------------------------------
@@ -169,8 +170,9 @@ void Neighbor::create_list(int box_change,int s_or_x)
     
     TYPE0* x;
     atoms->vectors[0].ret(x);
-    int* type;
-    atoms->vectors[type_n].ret(type);
+    int* type=NULL;
+    if(mapp->mode==MD)
+        atoms->vectors[type_n].ret(type);
     int x_dim=atoms->vectors[0].dim;
 
     int dim=atoms->dimension;
@@ -184,44 +186,7 @@ void Neighbor::create_list(int box_change,int s_or_x)
     int tmp_neigh_list_size=1024;
     int tmp_neigh_list_grow=50;
     CREATE1D(tmp_neigh_list,tmp_neigh_list_size);
-    /*
-    for(iatm=0;iatm<atoms->natms;iatm++)
-    {
-        icomp=x_dim*iatm;
-        for(jatm=iatm+1;jatm<atoms->natms+atoms->natms_ph;jatm++)
-        {
-            jcomp=x_dim*jatm;
-            rsq=0.0;
-            for(int idim=0;idim<dim;idim++)
-                rsq+=(x[icomp+idim]-x[jcomp+idim])
-                *(x[icomp+idim]-x[jcomp+idim]);
-            cut_sq=cut_sk_sq[COMP(type[iatm],type[jatm])];
-            
-            if(rsq<cut_sq)
-            {
-                if(neighbor_list_size[iatm]+1>tmp_neigh_list_size)
-                {
-                    GROW(tmp_neigh_list, tmp_neigh_list_size,tmp_neigh_list_size+tmp_neigh_list_grow);
-                    tmp_neigh_list_size+=tmp_neigh_list_grow;
-                }
-                tmp_neigh_list[neighbor_list_size[iatm]]=jatm;
-                neighbor_list_size[iatm]++;
-            }
-            
-        }
-        if(neighbor_list_size[iatm])
-        {
-            CREATE1D(neighbor_list[iatm],neighbor_list_size[iatm]);
-            memcpy(neighbor_list[iatm],tmp_neigh_list,neighbor_list_size[iatm]*sizeof(int));
-        }
-    }
-    if(atm_bin_size)
-        delete [] atm_bin;
-    atm_bin_size=0;
-    delete [] tmp_neigh_list;
-    return;
-    
-    */
+
     no_pairs=0;
     if(pair_wise)
     {
@@ -238,7 +203,10 @@ void Neighbor::create_list(int box_change,int s_or_x)
                 {
                     if(jatm>iatm)
                     {
-                        cut_sq=cut_sk_sq[COMP(type[iatm],type[jatm])];
+                        if(mapp->mode==MD)
+                            cut_sq=cut_sk_sq[COMP(type[iatm],type[jatm])];
+                        else
+                            cut_sq=cut_sk_sq[0];
                         jcomp=x_dim*jatm;
                         
                         rsq=0.0;

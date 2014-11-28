@@ -17,7 +17,6 @@ ReadCFG::ReadCFG(MAPP* mapp,int narg,char** args)
 :Read(mapp)
 {
     curr_id=-1;
-    type_no_before_x_d_no=0;
     
     if(narg!=3)
         error->abort("wrong command");
@@ -25,7 +24,6 @@ ReadCFG::ReadCFG(MAPP* mapp,int narg,char** args)
     if(atoms->dimension!=3)
         error->abort("in order to read a cfg"
                      " file the box dimension should be 3");
-    
     
     // setup the defaults
     basic_length=1.0;
@@ -35,7 +33,7 @@ ReadCFG::ReadCFG(MAPP* mapp,int narg,char** args)
     header_cmplt=0;
     atom_cmplt=0;
     vel_chk=1;
-    
+
     CREATE2D(H_x,3,3);
     CREATE2D(H_x_d,3,3);
     CREATE2D(H0,3,3);
@@ -80,42 +78,116 @@ ReadCFG::ReadCFG(MAPP* mapp,int narg,char** args)
     set_box();
     
     atoms->auto_grid_proc();
-    
-    x_no=atoms->find("x");
-    x_d_no=atoms->find_exist("x_d");
-    type_no=atoms->find("type");
-    id_no=atoms->find("id");
-    
-    if(x_d_no<type_no && type_no<id_no)
-        type_no_before_x_d_no=XD_TYPE_ID;
-    else if(x_d_no<id_no && id_no<type_no)
-        type_no_before_x_d_no=XD_ID_TYPE;
-    else if(id_no<x_d_no && x_d_no<type_no)
-        type_no_before_x_d_no=ID_XD_TYPE;
-    else if(id_no<type_no && type_no<x_d_no)
-        type_no_before_x_d_no=ID_TYPE_XD;
-    else if(type_no<x_d_no && x_d_no<id_no)
-        type_no_before_x_d_no=TYPE_XD_ID;
-    else if(type_no<id_no && id_no<x_d_no)
-        type_no_before_x_d_no=TYPE_ID_XD;
-    
-    if(x_d_no<0)
-        vec_list=new VecLst(mapp,3,x_no,type_no,id_no);
-    else
-        vec_list=new VecLst(mapp,4,x_no,x_d_no,type_no,id_no);
-    
-    
+ 
+    if(mapp->mode==MD)
+    {
+        x_n=atoms->find("x");
+        x_d_n=atoms->find_exist("x_d");
+        type_n=atoms->find("type");
+        id_n=atoms->find("id");
+        
+        if(x_d_n>0)
+        {
+            vec_list=new VecLst(mapp,4,x_n,x_d_n,type_n,id_n);
+            if(x_d_n<type_n && type_n<id_n)
+            {
+                ch_x_d=atoms->vectors[x_n].byte_size;
+                ch_type=ch_x_d+atoms->vectors[x_d_n].byte_size;
+                ch_id=ch_type+atoms->vectors[type_n].byte_size;
+            }
+            else if(x_d_n<id_n && id_n<type_n)
+            {
+                ch_x_d=atoms->vectors[x_n].byte_size;
+                ch_id=ch_x_d+atoms->vectors[x_d_n].byte_size;
+                ch_type=ch_id+atoms->vectors[id_n].byte_size;
+            }
+            else if(id_n<x_d_n && x_d_n<type_n)
+            {
+                ch_id=atoms->vectors[x_n].byte_size;
+                ch_x_d=ch_id+atoms->vectors[id_n].byte_size;
+                ch_type=ch_x_d+atoms->vectors[x_d_n].byte_size;
+            }
+            else if(id_n<type_n && type_n<x_d_n)
+            {
+                ch_id=atoms->vectors[x_n].byte_size;
+                ch_type=ch_id+atoms->vectors[id_n].byte_size;
+                ch_x_d=ch_type+atoms->vectors[type_n].byte_size;
+            }
+            else if(type_n<x_d_n && x_d_n<id_n)
+            {
+                ch_type=atoms->vectors[x_n].byte_size;
+                ch_x_d=ch_type+atoms->vectors[type_n].byte_size;
+                ch_id=ch_x_d+atoms->vectors[x_d_n].byte_size;
+            }
+            else if(type_n<id_n && id_n<x_d_n)
+            {
+                ch_type=atoms->vectors[x_n].byte_size;
+                ch_id=ch_type+atoms->vectors[type_n].byte_size;
+                ch_type=ch_id+atoms->vectors[id_n].byte_size;
+            }
+        }
+        else
+        {
+            vec_list=new VecLst(mapp,3,x_n,type_n,id_n);
+            if(type_n<id_n)
+            {
+                ch_type=atoms->vectors[x_n].byte_size;
+                ch_id=ch_type+atoms->vectors[type_n].byte_size;
+            }
+            else
+            {
+                ch_id=atoms->vectors[x_n].byte_size;
+                ch_type=ch_id+atoms->vectors[id_n].byte_size;
+            }
+        }
+
+    }
+    else if(mapp->mode==DMD)
+    {
+        if((entry_count-3)%2!=0)
+            error->abort("wrong number of entry for DMD in cfg file");
+        dmd_no_types=(entry_count-3)/2;
+        if(atoms->vectors[0].dim!=dmd_no_types+3)
+            atoms->vectors[0].change_dimension(3+dmd_no_types);
+        x_n=0;
+        c_n=atoms->find_exist("c");
+        id_n=atoms->find("id");
+        if(c_n==-1)
+        {
+            c_n=atoms->add<TYPE0>(1,dmd_no_types,"c");
+        }
+        else
+        {
+            if(atoms->vectors[c_n].dim!=dmd_no_types)
+                atoms->vectors[c_n].change_dimension(dmd_no_types);
+        }
+        vec_list=new VecLst(mapp,3,x_n,c_n,id_n);
+        if(c_n<id_n)
+        {
+            ch_c=atoms->vectors[x_n].byte_size;
+            ch_id=ch_c+atoms->vectors[c_n].byte_size;
+        }
+        else
+        {
+            ch_id=atoms->vectors[x_n].byte_size;
+            ch_c=ch_id+atoms->vectors[id_n].byte_size;
+        }
+        
+        if(ext_cfg==0)
+            error->abort("DMD mode can only read extended cfg");
+    }
     
     CREATE1D(ch_buff,vec_list->byte_size);
-    
     
     while (!atom_cmplt)
     {
         if(atoms->my_p_no==0)
             fgets(line,MAXCHAR,cfgfile);
         MPI_Bcast(line,MAXCHAR,MPI_CHAR,0,world);
-        
-        read_atom();
+        if(mapp->mode==MD)
+            read_atom();
+        else if(mapp->mode==DMD)
+            read_atom_dmd();
     }
     int loc_no=atoms->natms;
     int tot_no=0;
@@ -149,8 +221,8 @@ ReadCFG::ReadCFG(MAPP* mapp,int narg,char** args)
     
     if(atoms->my_p_no==0)
         fclose(cfgfile);
-    
 
+    
 }
 /*--------------------------------------------
  constructor
@@ -412,7 +484,7 @@ void ReadCFG::read_atom()
             narg=mapp->parse_line(line,arg);
             if(narg!=1)
                 error->abort("error cfg: %s",line);
-            if(mass==0.0)
+            if(mass<=0.0)
                 error->abort("mass cannot be zero");
             last_type=
             atom_types->add_type(mass,arg[0]);
@@ -470,95 +542,136 @@ void ReadCFG::read_atom()
         delete [] arg;
 }
 /*--------------------------------------------
+ reads the atom section of the cfg file
+ --------------------------------------------*/
+void ReadCFG::read_atom_dmd()
+{
+    char** arg;
+    TYPE0 mass;
+    TYPE0* buff;
+    int narg=mapp->parse_line(line,arg);
+    
+    if(atoms->my_p_no==0)
+    {
+        if(feof(cfgfile))
+            atom_cmplt=1;
+    }
+    MPI_Bcast(&atom_cmplt,1,MPI_INT,0,world);
+    if(atom_cmplt)
+    {
+        if(narg)
+            delete [] arg;
+        return;
+    }
+    
+    
+    if (narg!=8 && ext_cfg==0)
+        error->abort("wrong format: %s",line);
+    if (ext_cfg && !(narg==1 || narg==entry_count))
+        error->abort("wrong extended format: %s",line);
+    
+
+    if(narg==1)
+    {
+        mass=static_cast<TYPE0>(atof(arg[0]));
+        if(atoms->my_p_no==0)
+            fgets(line,MAXCHAR,cfgfile);
+        MPI_Bcast(line,MAXCHAR,MPI_CHAR,0,world);
+        
+        narg=mapp->parse_line(line,arg);
+        if(narg!=1)
+            error->abort("error cfg: %s",line);
+        if(mass<=0.0)
+            error->abort("mass cannot be zero");
+        last_type=
+        atom_types->add_type(mass,arg[0]);
+        if(last_type>=dmd_no_types)
+            error->abort("exceeded the number of types in DMD");
+    }
+    else if(narg==entry_count)
+    {
+        CREATE1D(buff,entry_count);
+        for (int i=0;i<entry_count;i++)
+            buff[i]=static_cast<TYPE0>(atof(arg[i]));
+        
+        add_atom_read_x(last_type,buff);
+        
+        delete [] buff;
+    }
+    else
+        error->abort("unknown line: %s",line);
+
+    
+    
+    for(int i=0;i<narg;i++)
+        delete [] arg[i];
+    if(narg)
+        delete [] arg;
+}
+/*--------------------------------------------
  addatom_read_x
  --------------------------------------------*/
 void ReadCFG::add_atom_read_x(int t,TYPE0* buff)
 {
     curr_id++;
-    TYPE0* x_d;
-    CREATE1D(x_d,3);
     
-    for(int i=0;i<3;i++)
+    if(mapp->mode==MD)
     {
-        while(buff[i]>=1)
-            buff[i]--;
-        while(buff[i]<0)
-            buff[i]++;
-    }
-    
-    V3ZERO(x_d);
-    // since H is lower triangular
-    
-    for (int i=0;i<3;i++)
-        for (int j=0;j<3;j++)
-            x_d[j]+=buff[i+3]*H_x_d[i][j]*R;
-    for (int i=0;i<3;i++)
-        buff[i+3]=x_d[i];
-    delete [] x_d;
-    
-    for(int i=0;i<3;i++)
-        if(!(atoms->s_lo[i]<=buff[i]
-             && buff[i]<atoms->s_hi[i]))
-            return;
-    if(x_d_no<0)
-    {
-
+        TYPE0* x_d;
+        CREATE1D(x_d,3);
         
-        if(type_no_before_x_d_no==XD_TYPE_ID)
+        for(int i=0;i<3;i++)
         {
-            memcpy(ch_buff,buff,3*sizeof(TYPE0));
-            memcpy(&ch_buff[3*sizeof(TYPE0)],&t,sizeof(int));
-            memcpy(&ch_buff[3*sizeof(TYPE0)+sizeof(int)],&curr_id,sizeof(int));
+            while(buff[i]>=1)
+                buff[i]--;
+            while(buff[i]<0)
+                buff[i]++;
         }
-        else if(type_no_before_x_d_no==XD_ID_TYPE)
-        {
-            memcpy(ch_buff,buff,3*sizeof(TYPE0));
-            memcpy(&ch_buff[3*sizeof(TYPE0)],&curr_id,sizeof(int));
-            memcpy(&ch_buff[3*sizeof(TYPE0)+sizeof(int)],&t,sizeof(int));
-        }
+        
+        V3ZERO(x_d);
+        
+        for (int i=0;i<3;i++)
+            for (int j=0;j<3;j++)
+                x_d[j]+=buff[i+3]*H_x_d[i][j]*R;
+        for (int i=0;i<3;i++)
+            buff[i+3]=x_d[i];
+        
+        delete [] x_d;
+        
+        for(int i=0;i<3;i++)
+            if(!(atoms->s_lo[i]<=buff[i]
+                 && buff[i]<atoms->s_hi[i]))
+                return;
+        
+        memcpy(ch_buff,buff,3*sizeof(TYPE0));
+        memcpy(&ch_buff[ch_type],&t,sizeof(int));
+        memcpy(&ch_buff[ch_id],&curr_id,sizeof(int));
+        
+        if(x_d_n>-1)
+            memcpy(&ch_buff[ch_x_d],&buff[3],3*sizeof(TYPE0));
+        
     }
     else
     {
-        if(type_no_before_x_d_no==TYPE_XD_ID)
+
+        
+        for(int i=0;i<3;i++)
         {
-            memcpy(ch_buff,buff,3*sizeof(TYPE0));
-            memcpy(&ch_buff[3*sizeof(TYPE0)],&t,sizeof(int));
-            memcpy(&ch_buff[3*sizeof(TYPE0)+sizeof(int)],&buff[3],3*sizeof(TYPE0));
-            memcpy(&ch_buff[6*sizeof(TYPE0)+sizeof(int)],&curr_id,sizeof(int));
+            while(buff[i]>=1)
+                buff[i]--;
+            while(buff[i]<0)
+                buff[i]++;
         }
-        else if(type_no_before_x_d_no==TYPE_ID_XD)
-        {
-            memcpy(ch_buff,buff,3*sizeof(TYPE0));
-            memcpy(&ch_buff[3*sizeof(TYPE0)],&t,sizeof(int));
-            memcpy(&ch_buff[3*sizeof(TYPE0)+sizeof(int)],&curr_id,sizeof(int));
-            memcpy(&ch_buff[3*sizeof(TYPE0)+2*sizeof(int)],&buff[3],3*sizeof(TYPE0));
-        }
-        else if(type_no_before_x_d_no==ID_TYPE_XD)
-        {
-            memcpy(ch_buff,buff,3*sizeof(TYPE0));
-            memcpy(&ch_buff[3*sizeof(TYPE0)],&curr_id,sizeof(int));
-            memcpy(&ch_buff[3*sizeof(TYPE0)+sizeof(int)],&t,sizeof(int));
-            memcpy(&ch_buff[3*sizeof(TYPE0)+2*sizeof(int)],&buff[3],3*sizeof(TYPE0));
-        }
-        else if(type_no_before_x_d_no==ID_XD_TYPE)
-        {
-            memcpy(ch_buff,buff,3*sizeof(TYPE0));
-            memcpy(&ch_buff[3*sizeof(TYPE0)],&curr_id,sizeof(int));
-            memcpy(&ch_buff[3*sizeof(TYPE0)+sizeof(int)],&buff[3],3*sizeof(TYPE0));
-            memcpy(&ch_buff[6*sizeof(TYPE0)+sizeof(int)],&t,sizeof(int));
-        }
-        else if(type_no_before_x_d_no==XD_TYPE_ID)
-        {
-            memcpy(ch_buff,buff,6*sizeof(TYPE0));
-            memcpy(&ch_buff[6*sizeof(TYPE0)],&t,sizeof(int));
-            memcpy(&ch_buff[6*sizeof(TYPE0)+sizeof(int)],&curr_id,sizeof(int));
-        }
-        else if(type_no_before_x_d_no==XD_ID_TYPE)
-        {
-            memcpy(ch_buff,buff,6*sizeof(TYPE0));
-            memcpy(&ch_buff[6*sizeof(TYPE0)],&curr_id,sizeof(int));
-            memcpy(&ch_buff[6*sizeof(TYPE0)+sizeof(int)],&t,sizeof(int));
-        }
+        
+        for(int i=0;i<3;i++)
+            if(!(atoms->s_lo[i]<=buff[i]
+                 && buff[i]<atoms->s_hi[i]))
+                return;
+        
+        memcpy(ch_buff,buff,(3+dmd_no_types)*sizeof(TYPE0));
+        memcpy(&ch_buff[ch_id],&curr_id,sizeof(int));
+        memcpy(&ch_buff[ch_c],&buff[3+dmd_no_types],dmd_no_types*sizeof(TYPE0));
+
     }
     
     atoms->unpack(ch_buff,0,1,vec_list);

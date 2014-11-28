@@ -7,6 +7,7 @@ ReadStyle(ReadCFG,cfg)
 #else
 #ifndef __MAPP__readCFG__
 #define __MAPP__readCFG__
+#include <iostream>
 #include "atoms.h"
 #include "read.h"
 namespace MAPP_NS {
@@ -34,15 +35,14 @@ namespace MAPP_NS {
         
         void read_header();
         void read_atom();
+        void read_atom_dmd();
         void M3sqroot(TYPE0**,TYPE0**);
         void set_box();
         void add_atom_read_x(int,TYPE0*);
         
-        int type_no_before_x_d_no;
-        int type_no;
-        int x_no;
-        int x_d_no;
-        int id_no;
+        int type_n,x_n,x_d_n,id_n,c_n;
+        int ch_x_d,ch_type,ch_id,ch_c;
+        int dmd_no_types;
         
         int curr_id;
         char* ch_buff;

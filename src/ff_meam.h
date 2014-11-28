@@ -208,7 +208,10 @@ namespace MAPP_NS
         void init();
         void fin();
         void coef(int,char**);
-
+        
+        void create_2nd_neigh_lst(){};
+        TYPE0 calc_g(int,TYPE0,TYPE0*,TYPE0*){return 0.0;};
+        void calc_y(){};
     };
 }
 
