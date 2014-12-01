@@ -419,7 +419,7 @@ void MAPP::command_style(int narg,char** args)
  differnt command styles
  --------------------------------------------*/
 void MAPP::change_mode(int narg,char** args)
-{
+{    
     if(narg!=2)
         error->abort("wrong command: %s",args[0]);
     int new_mode;

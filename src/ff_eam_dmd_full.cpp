@@ -22,14 +22,13 @@ ForceField_eam_dmd_full(MAPP* mapp) : ForceField(mapp)
     no_types=atom_types->no_types;
     if(atoms->vectors[0].dim!=3+no_types)
         error->abort("the dimension of x"
-                     " vector should be 3 + no of types");
+        " vector should be 3 + no of types");
     
     
     
     CREATE1D(nrgy_strss,7);
     CREATE1D(cut_sk_sq,no_types*(no_types+1)/2);
     CREATE1D(c_0,no_types);
-    CREATE1D(c_1,no_types);
     
     c_d_n=atoms->find_exist("c_d");
     
@@ -51,7 +50,6 @@ ForceField_eam_dmd_full::~ForceField_eam_dmd_full()
     {
         delete [] cut_sk_sq;
         delete [] c_0;
-        delete [] c_1;
     }
     
     delete [] nrgy_strss;
@@ -96,10 +94,10 @@ force_calc(int st_clc,TYPE0* en_st)
     atoms->vectors[x_n].ret(x);
     TYPE0* f;
     atoms->vectors[f_n].ret(f);
-    TYPE0* F;
-    atoms->vectors[F_n].ret(F);
-    TYPE0* dF;
-    atoms->vectors[dF_n].ret(dF);
+    TYPE0* E;
+    atoms->vectors[E_n].ret(E);
+    TYPE0* dE;
+    atoms->vectors[dE_n].ret(dE);
     TYPE0* c;
     atoms->vectors[c_n].ret(c);
        
@@ -154,7 +152,7 @@ force_calc(int st_clc,TYPE0* en_st)
             nrgy_strss[i]=0.0;
     
     int natms=atoms->natms;
-    for(int i=0;i<natms*no_types;i++) F[i]=0.0;
+    for(int i=0;i<natms*no_types;i++) E[i]=0.0;
     for(int i=0;i<natms*(3+no_types);i++) f[i]=0.0;
     
     phi_start=0;
@@ -245,11 +243,11 @@ force_calc(int st_clc,TYPE0* en_st)
                                 drho_dr[rho_start+type2rho[itype][jtype]]=-g_0*r_inv-2.0*alpha_sq*g_1;
                                 drho_dalpha[rho_start+type2rho[itype][jtype]]=(0.5*g_0-g_2)/alpha;
 
-                                F[iatm*no_types+itype]+=g_0*c[jatm*no_types+jtype];
+                                E[iatm*no_types+itype]+=g_0*c[jatm*no_types+jtype];
                                 
                                 if (jatm<natms)
                                 {
-                                    F[jatm*no_types+jtype]+=g_0*c[iatm*no_types+itype];
+                                    E[jatm*no_types+jtype]+=g_0*c[iatm*no_types+itype];
                                     if(itype>=jtype)
                                         nrgy_strss[0]+=0.5*(c[jatm*no_types+jtype]*c[iatm*no_types+itype]
                                         +c[jatm*no_types+itype]*c[iatm*no_types+jtype])*f_0;
@@ -291,11 +289,11 @@ force_calc(int st_clc,TYPE0* en_st)
                                 drho_dalpha[rho_start+type2rho[itype][jtype]]=0.0;
                                 drho_dr[rho_start+type2rho[itype][jtype]]=coef[6]*p2+coef[5]*p+coef[4];
                                 
-                                F[iatm*no_types+itype]+=rho[rho_start+type2rho[itype][jtype]]*c[jatm*no_types+jtype];
+                                E[iatm*no_types+itype]+=rho[rho_start+type2rho[itype][jtype]]*c[jatm*no_types+jtype];
                                 
                                 if (jatm<natms)
                                 {
-                                    F[jatm*no_types+jtype]+=rho[rho_start+type2rho[itype][jtype]]*c[iatm*no_types+itype];
+                                    E[jatm*no_types+jtype]+=rho[rho_start+type2rho[itype][jtype]]*c[iatm*no_types+itype];
                                     if(itype>=jtype)
                                     {
                                         nrgy_strss[0]+=0.5*(c[jatm*no_types+jtype]*c[iatm*no_types+itype]
@@ -325,7 +323,7 @@ force_calc(int st_clc,TYPE0* en_st)
         
         for(int itype=0;itype<no_types; itype++)
         {
-            p=F[iatm*no_types+itype]*drho_inv;
+            p=E[iatm*no_types+itype]*drho_inv;
             m=static_cast<int>(p);
             m=MIN(m,nr-2);
             p-=m;
@@ -338,18 +336,14 @@ force_calc(int st_clc,TYPE0* en_st)
             tmp0=coef[4]*p4+coef[3]*p3+coef[2]*p2+coef[1]*p+coef[0];
             tmp1=coef[8]*p3+coef[7]*p2+coef[6]*p+coef[5];
             
-            if(F[iatm*no_types+itype]>rho_max)
-                tmp0+=tmp1*(F[iatm*no_types+itype]-rho_max);
+            if(E[iatm*no_types+itype]>rho_max)
+                tmp0+=tmp1*(E[iatm*no_types+itype]-rho_max);
             
-            F[iatm*no_types+itype]=tmp0;
-            dF[iatm*no_types+itype]=tmp1;
+            E[iatm*no_types+itype]=tmp0;
+            dE[iatm*no_types+itype]=tmp1;
             
-            nrgy_strss[0]+=c[iatm*no_types+itype]*F[iatm*no_types+itype];
-            
-            /*
-            nrgy_strss[0]+=kbT*(c[iatm*no_types+itype]*log(c[iatm*no_types+itype])
-            +(1.0-c[iatm*no_types+itype])*log(1.0-c[iatm*no_types+itype]));
-            */
+            nrgy_strss[0]+=c[iatm*no_types+itype]*E[iatm*no_types+itype];
+
             nrgy_strss[0]+=kbT*calc_ent(c[iatm*no_types+itype]);
             
             nrgy_strss[0]+=1.5*kbT*c[iatm*no_types+itype]*log(x[icomp+3+itype])
@@ -360,7 +354,7 @@ force_calc(int st_clc,TYPE0* en_st)
         
     }
     
-    atoms->update(dF_n);
+    atoms->update(dE_n);
     
     phi_start=0;
     rho_start=0;
@@ -381,13 +375,13 @@ force_calc(int st_clc,TYPE0* en_st)
             {
                 for(int jtype=0;jtype<no_types; jtype++)
                 {
-                    fpair=-(drho_dr[rho_start+type2rho[jtype][itype]]*dF[iatm*no_types+itype]
-                    +drho_dr[rho_start+type2rho[itype][jtype]]*dF[jatm*no_types+jtype]
+                    fpair=-(drho_dr[rho_start+type2rho[jtype][itype]]*dE[iatm*no_types+itype]
+                    +drho_dr[rho_start+type2rho[itype][jtype]]*dE[jatm*no_types+jtype]
                     +dphi_dr[phi_start+type2phi[itype][jtype]])
                     *(c[iatm*no_types+itype]*c[jatm*no_types+jtype])*r_inv;
                     
-                    apair=-(drho_dalpha[rho_start+type2rho[jtype][itype]]*dF[iatm*no_types+itype]
-                    +drho_dalpha[rho_start+type2rho[itype][jtype]]*dF[jatm*no_types+jtype]
+                    apair=-(drho_dalpha[rho_start+type2rho[jtype][itype]]*dE[iatm*no_types+itype]
+                    +drho_dalpha[rho_start+type2rho[itype][jtype]]*dE[jatm*no_types+jtype]
                     +dphi_dalpha[phi_start+type2phi[itype][jtype]])
                     *c[iatm*no_types+itype]*c[jatm*no_types+jtype]/
                     ((x[icomp+3+itype]+x[jcomp+3+jtype])
@@ -465,8 +459,8 @@ TYPE0 ForceField_eam_dmd_full::energy_calc()
     atoms->vectors[x_n].ret(x);
     TYPE0* f;
     atoms->vectors[f_n].ret(f);
-    TYPE0* F;
-    atoms->vectors[F_n].ret(F);
+    TYPE0* E;
+    atoms->vectors[E_n].ret(E);
     TYPE0* c;
     atoms->vectors[c_n].ret(c);
     
@@ -486,7 +480,7 @@ TYPE0 ForceField_eam_dmd_full::energy_calc()
     
     
     int natms=atoms->natms;
-    for(int i=0;i<natms*no_types;i++) F[i]=0.0;
+    for(int i=0;i<natms*no_types;i++) E[i]=0.0;
     TYPE0 en=0.0;
     TYPE0 en_tot=0.0;
     
@@ -563,11 +557,11 @@ TYPE0 ForceField_eam_dmd_full::energy_calc()
                                 
                                 g_0*=PI_IN_SQ*r_inv;
 
-                                F[iatm*no_types+itype]+=g_0*c[jatm*no_types+jtype];
+                                E[iatm*no_types+itype]+=g_0*c[jatm*no_types+jtype];
                                 
                                 if (jatm<natms)
                                 {
-                                    F[jatm*no_types+jtype]+=g_0*c[iatm*no_types+itype];
+                                    E[jatm*no_types+jtype]+=g_0*c[iatm*no_types+itype];
                                     if(itype>=jtype)
                                     {
                                         en+=0.5*(c[jatm*no_types+jtype]*c[iatm*no_types+itype]
@@ -613,11 +607,11 @@ TYPE0 ForceField_eam_dmd_full::energy_calc()
                                 coef=rho_arr[type2rho[itype][jtype]][m];
                                 g_0=coef[3]*p3+coef[2]*p2+coef[1]*p+coef[0];
                                 
-                                F[iatm*no_types+itype]+=g_0*c[jatm*no_types+jtype];
+                                E[iatm*no_types+itype]+=g_0*c[jatm*no_types+jtype];
                                 
                                 if (jatm<natms)
                                 {
-                                    F[jatm*no_types+jtype]+=g_0*c[iatm*no_types+itype];
+                                    E[jatm*no_types+jtype]+=g_0*c[iatm*no_types+itype];
                                     if(itype>=jtype)
                                     {
                                         en+=0.5*(c[jatm*no_types+jtype]*c[iatm*no_types+itype]
@@ -642,7 +636,7 @@ TYPE0 ForceField_eam_dmd_full::energy_calc()
         
         for(int itype=0;itype<no_types; itype++)
         {
-            p=F[iatm*no_types+itype]*drho_inv;
+            p=E[iatm*no_types+itype]*drho_inv;
             m=static_cast<int>(p);
             m=MIN(m,nr-2);
             p-=m;
@@ -655,12 +649,12 @@ TYPE0 ForceField_eam_dmd_full::energy_calc()
             tmp0=coef[4]*p4+coef[3]*p3+coef[2]*p2+coef[1]*p+coef[0];
             tmp1=coef[8]*p3+coef[7]*p2+coef[6]*p+coef[5];
             
-            if(F[iatm*no_types+itype]>rho_max)
-                tmp0+=tmp1*(F[iatm*no_types+itype]-rho_max);
+            if(E[iatm*no_types+itype]>rho_max)
+                tmp0+=tmp1*(E[iatm*no_types+itype]-rho_max);
             
-            F[iatm*no_types+itype]=tmp0;
+            E[iatm*no_types+itype]=tmp0;
             
-            en+=c[iatm*no_types+itype]*F[iatm*no_types+itype];
+            en+=c[iatm*no_types+itype]*E[iatm*no_types+itype];
             
             /*
             en+=kbT*(c[iatm*no_types+itype]*log(c[iatm*no_types+itype])
@@ -701,15 +695,14 @@ void ForceField_eam_dmd_full::init()
     c_n=atoms->find("c");
     
     neighbor->pair_wise=1;
-    F_n=atoms->add<TYPE0>(1,no_types,"E");
-    dF_n=atoms->add<TYPE0>(1,no_types,"dE");
-    ddF_n=atoms->add<TYPE0>(1,no_types,"ddE");
+    
+    E_n=atoms->add<TYPE0>(1,no_types,"E");
+    dE_n=atoms->add<TYPE0>(1,no_types,"dE");
+    ddE_n=atoms->add<TYPE0>(1,no_types,"ddE");
     n_n=atoms->add<TYPE0>(1,no_types,"n");
     s_n=atoms->add<TYPE0>(1,no_types,"s");
     t_n=atoms->add<TYPE0>(1,no_types,"t");
     v_n=atoms->add<TYPE0>(1,no_types,"v");
-    g_n=atoms->add<TYPE0>(0,no_types,"g");
-    a_n=atoms->add<TYPE0>(0,no_types,"a");
     crd_n=atoms->add<int>(1,1,"crd");
     
 }
@@ -719,15 +712,13 @@ void ForceField_eam_dmd_full::init()
 void ForceField_eam_dmd_full::fin()
 {
     atoms->del(crd_n);
-    atoms->del(a_n);
-    atoms->del(g_n);
     atoms->del(v_n);
     atoms->del(t_n);
     atoms->del(s_n);
     atoms->del(n_n);
-    atoms->del(ddF_n);
-    atoms->del(dF_n);
-    atoms->del(F_n);
+    atoms->del(ddE_n);
+    atoms->del(dE_n);
+    atoms->del(E_n);
     
     if(max_pairs)
     {
@@ -753,32 +744,33 @@ void ForceField_eam_dmd_full::fin()
 void ForceField_eam_dmd_full::coef(int narg,char** arg)
 {
     TYPE0 kb,T,hbar;
-    if (narg<9)
+    if (narg<10)
         error->abort("wrong coeff command "
                      "for eam Force Field");
-    
-    set_weight_abs(atoi(arg[1]));
-    alpha_min=atof(arg[2]);
-    alpha_max=atof(arg[3]);
-    T=atof(arg[4]);
-    kb=atof(arg[5]);
-    hbar=atof(arg[6]);
+    rsq_crd=atof(arg[1]);
+    rsq_crd*=rsq_crd;
+    set_weight_abs(atoi(arg[2]));
+    alpha_min=atof(arg[3]);
+    alpha_max=atof(arg[4]);
+    T=atof(arg[5]);
+    kb=atof(arg[6]);
+    hbar=atof(arg[7]);
     
     clean_up();
-    if(strcmp(arg[7],"FS")==0)
+    if(strcmp(arg[8],"FS")==0)
     {
         eam_mode=FINNIS_FL;
-        set_funcfl(narg-8,&arg[8]);
+        set_funcfl(narg-9,&arg[9]);
     }
-    else if(strcmp(arg[7],"SetFL")==0)
+    else if(strcmp(arg[8],"SetFL")==0)
     {
         eam_mode=SET_FL;
-        set_setfl(narg-8,&arg[8]);
+        set_setfl(narg-9,&arg[9]);
     }
-    else if(strcmp(arg[7],"FuncFL")==0)
+    else if(strcmp(arg[8],"FuncFL")==0)
     {
         eam_mode=FUNC_FL;
-        set_funcfl(narg-8,&arg[8]);
+        set_funcfl(narg-9,&arg[9]);
     }
     else
         error->abort("wrong coeff command "
@@ -794,7 +786,6 @@ void ForceField_eam_dmd_full::coef(int narg,char** arg)
         mass*=1.0364269184093291236e-28;
         deb_l=hbar*hbar*2.0/(mass*kb*T);
         c_0[i]=1.5*kb*T*(log(deb_l)-1.0);
-        c_1[i]=pow(hbar*hbar*2.0/(mass*kb*T*exp(1.0)),1.5);
     }
 
     kbT=kb*T;
@@ -808,13 +799,8 @@ void ForceField_eam_dmd_full::coef(int narg,char** arg)
     cut_sq=rc*rc;
     mod_rc=rc+xi[no_i-1]/sqrt(alpha_min);
     cut_sq_mod=mod_rc*mod_rc;
-    rsq_crd=6.25;
-    
-    
-    
     
 
-    
     
 }
 /*--------------------------------------------
@@ -2267,10 +2253,10 @@ void ForceField_eam_dmd_full::calc_y()
 {
     TYPE0* x;
     atoms->vectors[x_n].ret(x);
-    TYPE0* F;
-    atoms->vectors[F_n].ret(F);
-    TYPE0* dF;
-    atoms->vectors[dF_n].ret(dF);
+    TYPE0* E;
+    atoms->vectors[E_n].ret(E);
+    TYPE0* dE;
+    atoms->vectors[dE_n].ret(dE);
     TYPE0* c;
     atoms->vectors[c_n].ret(c);
     TYPE0* n;
@@ -2291,7 +2277,7 @@ void ForceField_eam_dmd_full::calc_y()
     
     int natms=atoms->natms;
     for(iatm=0;iatm<natms*no_types;iatm++)
-        c_d[iatm]=F[iatm]=dF[iatm]=0.0;
+        c_d[iatm]=E[iatm]=dE[iatm]=0.0;
     
     phi_start=0;
     rho_start=0;
@@ -2307,9 +2293,9 @@ void ForceField_eam_dmd_full::calc_y()
             {
                 for(int jtype=0;jtype<no_types;jtype++)
                 {
-                    F[icomp+itype]+=c[jcomp+jtype]*rho[rho_start+type2rho[jtype][itype]];
+                    E[icomp+itype]+=c[jcomp+jtype]*rho[rho_start+type2rho[jtype][itype]];
                     if(jatm<natms)
-                        F[jcomp+jtype]+=c[icomp+itype]*rho[rho_start+type2rho[itype][jtype]];
+                        E[jcomp+jtype]+=c[icomp+itype]*rho[rho_start+type2rho[itype][jtype]];
                 }
             }
             
@@ -2318,7 +2304,7 @@ void ForceField_eam_dmd_full::calc_y()
         
         for(int itype=0;itype<no_types; itype++)
         {
-            p=F[iatm*no_types+itype]*drho_inv;
+            p=E[iatm*no_types+itype]*drho_inv;
             m=static_cast<int>(p);
             m=MIN(m,nr-2);
             p-=m;
@@ -2331,16 +2317,16 @@ void ForceField_eam_dmd_full::calc_y()
             tmp0=coef[4]*p4+coef[3]*p3+coef[2]*p2+coef[1]*p+coef[0];
             tmp1=coef[8]*p3+coef[7]*p2+coef[6]*p+coef[5];
             
-            if(F[iatm*no_types+itype]>rho_max)
-                tmp0+=tmp1*(F[icomp+itype]-rho_max);
+            if(E[iatm*no_types+itype]>rho_max)
+                tmp0+=tmp1*(E[icomp+itype]-rho_max);
             
-            n[icomp+itype]=F[icomp+itype]=tmp0;
-            dF[icomp+itype]=tmp1;
+            n[icomp+itype]=E[icomp+itype]=tmp0;
+            dE[icomp+itype]=tmp1;
         }
     }
     
 
-    atoms->update(dF_n);
+    atoms->update(dE_n);
     
     phi_start=0;
     rho_start=0;
@@ -2358,10 +2344,10 @@ void ForceField_eam_dmd_full::calc_y()
             {
                 for(int jtype=0;jtype<no_types;jtype++)
                 {
-                    n[icomp+itype]+=c[jcomp+jtype]*(rho[rho_start+type2rho[itype][jtype]]*dF[jatm+jtype]
+                    n[icomp+itype]+=c[jcomp+jtype]*(rho[rho_start+type2rho[itype][jtype]]*dE[jatm+jtype]
                                                     +phi[phi_start+type2phi[itype][jtype]]);
                     if(jatm<natms)
-                        n[jcomp+jtype]+=c[icomp+itype]*(rho[rho_start+type2rho[jtype][itype]]*dF[iatm+itype]
+                        n[jcomp+jtype]+=c[icomp+itype]*(rho[rho_start+type2rho[jtype][itype]]*dE[iatm+itype]
                                                         +phi[phi_start+type2phi[itype][jtype]]);
                 }
             }
@@ -2409,12 +2395,12 @@ TYPE0* a,TYPE0* g)
 {
     TYPE0* x;
     atoms->vectors[x_n].ret(x);
-    TYPE0* F;
-    atoms->vectors[F_n].ret(F);
-    TYPE0* dF;
-    atoms->vectors[dF_n].ret(dF);
-    TYPE0* ddF;
-    atoms->vectors[ddF_n].ret(ddF);
+    TYPE0* E;
+    atoms->vectors[E_n].ret(E);
+    TYPE0* dE;
+    atoms->vectors[dE_n].ret(dE);
+    TYPE0* ddE;
+    atoms->vectors[ddE_n].ret(ddE);
     TYPE0* c;
     atoms->vectors[c_n].ret(c);
     TYPE0* n;
@@ -2447,7 +2433,7 @@ TYPE0* a,TYPE0* g)
     
     int natms=atoms->natms;
     for(int i=0;i<natms*no_types;i++)
-        g[i]=F[i]=0.0;
+        g[i]=E[i]=0.0;
     
     phi_start=0;
     rho_start=0;
@@ -2464,9 +2450,9 @@ TYPE0* a,TYPE0* g)
             {
                 for(int jtype=0;jtype<no_types;jtype++)
                 {
-                    F[icomp+itype]+=c[jcomp+jtype]*rho[rho_start+type2rho[jtype][itype]];
+                    E[icomp+itype]+=c[jcomp+jtype]*rho[rho_start+type2rho[jtype][itype]];
                     if(jatm<natms)
-                        F[jcomp+jtype]+=c[icomp+itype]*rho[rho_start+type2rho[itype][jtype]];
+                        E[jcomp+jtype]+=c[icomp+itype]*rho[rho_start+type2rho[itype][jtype]];
                 }
             }
             
@@ -2476,7 +2462,7 @@ TYPE0* a,TYPE0* g)
         
         for(int itype=0;itype<no_types; itype++)
         {
-            p=F[iatm*no_types+itype]*drho_inv;
+            p=E[iatm*no_types+itype]*drho_inv;
             m=static_cast<int>(p);
             m=MIN(m,nr-2);
             p-=m;
@@ -2490,16 +2476,16 @@ TYPE0* a,TYPE0* g)
             tmp0=coef[4]*p4+coef[3]*p3+coef[2]*p2+coef[1]*p+coef[0];
             tmp1=coef[8]*p3+coef[7]*p2+coef[6]*p+coef[5];
             
-            if(F[iatm*no_types+itype]>rho_max)
-                tmp0+=tmp1*(F[icomp+itype]-rho_max);
+            if(E[iatm*no_types+itype]>rho_max)
+                tmp0+=tmp1*(E[icomp+itype]-rho_max);
             
-            n[icomp+itype]=F[icomp+itype]=tmp0;
-            dF[icomp+itype]=tmp1;
-            ddF[icomp+itype]=(3.0*coef[8]*p2+coef[7]*p+coef[6])*drho_inv;
+            n[icomp+itype]=E[icomp+itype]=tmp0;
+            dE[icomp+itype]=tmp1;
+            ddE[icomp+itype]=(3.0*coef[8]*p2+coef[7]*p+coef[6])*drho_inv;
         }
     }
     
-    atoms->update(dF_n);
+    atoms->update(dE_n);
     
     phi_start=0;
     rho_start=0;
@@ -2517,10 +2503,10 @@ TYPE0* a,TYPE0* g)
             {
                 for(int jtype=0;jtype<no_types;jtype++)
                 {
-                    n[icomp+itype]+=c[jcomp+jtype]*(rho[rho_start+type2rho[itype][jtype]]*dF[jatm+jtype]
+                    n[icomp+itype]+=c[jcomp+jtype]*(rho[rho_start+type2rho[itype][jtype]]*dE[jatm+jtype]
                                                     +phi[phi_start+type2phi[itype][jtype]]);
                     if(jatm<natms)
-                        n[jcomp+jtype]+=c[icomp+itype]*(rho[rho_start+type2rho[jtype][itype]]*dF[iatm+itype]
+                        n[jcomp+jtype]+=c[icomp+itype]*(rho[rho_start+type2rho[jtype][itype]]*dE[iatm+itype]
                                                         +phi[phi_start+type2phi[itype][jtype]]);
                 }
             }
@@ -2627,8 +2613,8 @@ TYPE0* a,TYPE0* g)
                 {
                     
                     tmp0=phi[phi_start+type2phi[jtype][itype]]
-                    +rho[rho_start+type2rho[jtype][itype]]*dF[icomp+itype]
-                    +rho[rho_start+type2rho[itype][jtype]]*dF[jcomp+jtype];
+                    +rho[rho_start+type2rho[jtype][itype]]*dE[icomp+itype]
+                    +rho[rho_start+type2rho[itype][jtype]]*dE[jcomp+jtype];
                     tmp0*=beta*alpha;
                     
                     v[icomp+itype]+=rho[rho_start+type2rho[jtype][itype]]*t[jcomp+jtype];
@@ -2646,7 +2632,7 @@ TYPE0* a,TYPE0* g)
     }
     
     atoms->update(v_n);
-    atoms->update(ddF_n);
+    atoms->update(ddE_n);
     
     rho_start=0;
     for(iatm=0;iatm<natms;iatm++)
@@ -2661,28 +2647,16 @@ TYPE0* a,TYPE0* g)
                 for(int jtype=0;jtype<no_types;jtype++)
                 {
                     g[icomp+itype]+=alpha*beta*rho[rho_start+type2rho[itype][jtype]]
-                    *ddF[jcomp+jtype]*c[jcomp+jtype]*v[jcomp+jtype];
+                    *ddE[jcomp+jtype]*c[jcomp+jtype]*v[jcomp+jtype];
                     if(jatm<natms)
                         g[jcomp+jtype]+=alpha*beta*rho[rho_start+type2rho[jtype][itype]]
-                        *ddF[icomp+itype]*c[icomp+itype]*v[icomp+itype];
+                        *ddE[icomp+itype]*c[icomp+itype]*v[icomp+itype];
                 }
             }
             rho_start+=no_types*no_types;
         }
     }
-    /*
-    inner=0.0;
-    for(int i=0;i<natms*no_types;i++)
-        inner+=g[i]*g[i];
-    TYPE0 inner_t=0.0;
-    MPI_Allreduce(&inner,&inner_t,1,MPI_TYPE0,MPI_SUM,world);
-    if(inner_t!=0.0)
-    {
-        inner_t=1.0/sqrt(inner_t);
-        for(int i=0;i<natms*no_types;i++)
-            g[i]*=inner_t;
-    }
-     */
+
     return ans;
     
 }

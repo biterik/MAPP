@@ -83,7 +83,6 @@ Clock_BDF::Clock_BDF(MAPP* mapp,int narg
     tot_dim=atoms->natms*c_dim;
 
     CREATE1D(y_list,order);
-    
     CREATE1D(a,tot_dim);
     CREATE1D(g,tot_dim);
     CREATE1D(g0,tot_dim);
@@ -93,9 +92,7 @@ Clock_BDF::Clock_BDF(MAPP* mapp,int narg
     for(int i=0;i<order;i++)
         CREATE1D(y[i],tot_dim);
     
-    
-    
-    
+        
 }
 /*--------------------------------------------
  destructor
@@ -171,7 +168,7 @@ void Clock_BDF::init()
     
     for(int i=0;i<tot_dim;i++)
         y[y_list[0]][i]=c[i];
-    
+    ave_err=0.0;
     
 }
 /*--------------------------------------------
@@ -179,10 +176,7 @@ void Clock_BDF::init()
  --------------------------------------------*/
 void Clock_BDF::fin()
 {
-
-
-    
-    
+    ave_err=ave_err/static_cast<TYPE0>(no_steps);
     
     if(write!=NULL)
         write->fin();
@@ -191,8 +185,10 @@ void Clock_BDF::fin()
     neighbor->fin();
     
     delete vecs_comm;
-    
     thermo->fin();
+    if(atoms->my_p_no==0)
+        printf("ave. err.: %5.4e\n",ave_err);
+    
     atoms->x2s(atoms->natms);
 }
 /*--------------------------------------------
@@ -210,8 +206,6 @@ void Clock_BDF::run()
     
     for(int istep=0;istep<no_steps;istep++)
     {
-
-        
         if(istep<order)
         {
             for(int i=0;i<tot_dim;i++)
@@ -223,17 +217,15 @@ void Clock_BDF::run()
         {
             for(int i=0;i<tot_dim;i++)
             {
-                a[i]=0;
+                a[i]=0.0;
                 for(int j=0;j<order;j++)
                     a[i]+=alpha[j]*y[y_list[j]][i];
             }
             solve(beta);
         }
         
-        
-        
-        if(write!=NULL)
-            write->write();
+            if(write!=NULL)
+                write->write();
         thermo->thermo_print();
         
         if(thermo->test_prev_step())
@@ -253,9 +245,6 @@ void Clock_BDF::run()
         step_no++;
     }
     
-    forcefield->force_calc(1,energy_stress);
-    thermo->update(pe_idx,energy_stress[0]);
-    thermo->update(stress_idx,6,&energy_stress[1]);
     delete [] energy_stress;
 }
 /*--------------------------------------------
@@ -265,54 +254,50 @@ void Clock_BDF::solve(TYPE0 bet)
 {
     TYPE0* c;
     atoms->vectors[c_n].ret(c);
+    TYPE0* c_d;
+    atoms->vectors[c_d_n].ret(c_d);
     
     TYPE0 gamma,max_gamma=1.0,min_gamma;
     TYPE0 inner,tmp;
     TYPE0 ratio;
     TYPE0 g0_g0,g_g,g_g0,g_h;
     TYPE0 curr_cost,ideal_cost,cost;
-//  TYPE0 upper=1.0-SMALL;
-//  TYPE0 lower=SMALL;
-    
-    
-    
-    
-    
-    
-    
 
     min_gamma=1.0e-16;
     int chk;
 
-    /*
-    for(int i=0;i<tot_dim;i++)
-    {
-        if(c[i]==0.0)
-            c[i]+=0.001;
-        else if (c[i]==1.0)
-            c[i]-=0.001;
-    }
-     */
-    atoms->update(c_n);
 
-    
     curr_cost=forcefield->calc_g(0,delta_t*bet,a,g);
     
-     /*
-    forcefield->calc_y();
-   
-
-    TYPE0* c_d;
-    atoms->vectors[c_d_n].ret(c_d);
-
+    int neg_chk=1;
+    TYPE0 tot_ratio;
     
+    
+    neg_chk=0;
     for(int i=0;i<tot_dim;i++)
-        printf("y[%d]: %e0\n",i,c_d[i]);
-    for(int i=0;i<tot_dim;i++)
-        printf("g[%d]: %e\n",i,g[i]);
+        if((c[i]==0.0 && h[i]<=0.0) || (c[i]==1.0 && h[i]>=0.0))
+            neg_chk=1;
     
-    */
-    
+    if(neg_chk)
+    {
+        forcefield->calc_y();
+        ratio=1.0;
+        
+        for(int i=0;i<tot_dim;i++)
+        {
+            tmp=c_d[i]*delta_t+c[i];
+            if(tmp>1.0)
+                ratio=MIN((1.0-c[i])/(tmp-c[i]),ratio);
+            else if(tmp<0.0)
+                ratio=MIN((c[i]-0.0)/(c[i]-tmp),ratio);
+        }
+        MPI_Allreduce(&ratio,&tot_ratio,1,MPI_TYPE0,MPI_MIN,world);
+        for(int i=0;i<tot_dim;i++)
+            c[i]+=c_d[i]*delta_t*tot_ratio;
+        atoms->update(c_n);
+    }
+     
+
     memcpy(h,g,tot_dim*sizeof(TYPE0));
     
     inner=0.0;
@@ -326,28 +311,8 @@ void Clock_BDF::solve(TYPE0 bet)
     
     while(curr_cost>SMALL && iter<MAX_ITER && max_gamma>min_gamma)
     {
-        
-
         memcpy(g0,g,tot_dim*sizeof(TYPE0));
         memcpy(c0,c,tot_dim*sizeof(TYPE0));
-        
-
-        /*
-        for(int i=0;i<tot_dim;i++)
-        {
-            tmp=c0[i]+h[i];
-            if(c[i]==1.0)
-            {
-                if(h[i]>0.0)
-                    h[i]=0.0;
-            }
-            else if(c[i]==0.0)
-            {
-                if(h[i]<0.0)
-                    h[i]=0.0;
-            }
-        }
-         */
 
         gamma=1.0;
         
@@ -364,23 +329,10 @@ void Clock_BDF::solve(TYPE0 bet)
             }
         }
         MPI_Allreduce(&gamma,&max_gamma,1,MPI_TYPE0,MPI_MIN,world);
-    
-        
-        
-
-        
+  
         chk=1;
-    
-        //max_gamma*=0.1;
-        /*
-        inner=0.0;
-        for(int i=0;i<tot_dim;i++)
-            inner+=h[i];
-        printf("innnnnn  %e \n",inner);
-          */  
         
         cost=curr_cost;
-        //printf("beg  %e \n",g_h);
         while(chk && max_gamma>min_gamma)
         {
             for(int i=0;i<tot_dim;i++)
@@ -390,10 +342,8 @@ void Clock_BDF::solve(TYPE0 bet)
             
             curr_cost=forcefield->calc_g(1,delta_t*bet,a,g);
             ideal_cost=cost-slope*max_gamma*g_h;
-            //ideal_cost=cost;
             if(curr_cost<ideal_cost)
                 chk=0;
-            //printf("dddd gamma %e %e\n",max_gamma,curr_cost);
             max_gamma*=gamma_red;
             if(max_gamma<=0.0)
             {
@@ -403,7 +353,6 @@ void Clock_BDF::solve(TYPE0 bet)
         }
         
         curr_cost=forcefield->calc_g(0,delta_t*bet,a,g);
-        //printf("end %e %e\n",curr_cost,max_gamma);
         
         
         inner=0.0;
@@ -431,20 +380,14 @@ void Clock_BDF::solve(TYPE0 bet)
         }
         g_h=0.0;
         MPI_Allreduce(&inner,&g_h,1,MPI_TYPE0,MPI_SUM,world);
-        
-        //printf("g_h %lf \n",g_h);
-        
+                
         if(g_h<0.0)
         {
-            
             memcpy(h,g,tot_dim*sizeof(TYPE0));
             g_h=g_g;
         }
         iter++;
         
     }
-    //printf("cost: %e\n",curr_cost);
-    
-    
+    ave_err+=curr_cost;
 }
-

@@ -14,7 +14,7 @@ namespace MAPP_NS {
         int order;
         TYPE0* alpha;
         TYPE0 beta;
-        
+        TYPE0 ave_err;
 
         
         

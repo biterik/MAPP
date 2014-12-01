@@ -39,14 +39,13 @@ namespace MAPP_NS
         int** type2rho;
         int** type2phi;
         
-        int f_n,type_n,x_n,c_n,F_n,dF_n,ddF_n,
-        n_n,s_n,crd_n,t_n,v_n,g_n,a_n,c_d_n;
+        int f_n,type_n,x_n,c_n,E_n,dE_n,ddE_n,
+        n_n,s_n,crd_n,t_n,v_n,c_d_n;
         TYPE0* nrgy_strss;
         TYPE0 cut_sq;
         TYPE0 cut_sq_mod;
         TYPE0 rc,mod_rc,kbT,beta;
         TYPE0* c_0;
-        TYPE0* c_1;
         
         /*--------------------------------------------*/
         TYPE0* rho;

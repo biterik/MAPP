@@ -226,6 +226,7 @@ void Min_CG::run()
     int istp=0;
     TYPE0 f0_f0;
     TYPE0 f_f;
+    TYPE0 f_h;
     TYPE0 f_f0;
     TYPE0 ratio;
     TYPE0 inner;
@@ -379,11 +380,16 @@ void Min_CG::run()
             
             ratio=(f_f-f_f0)/(f0_f0);
             
+            inner=0.0;
+            
             for(int i=0;i<x_dim*atoms->natms;i++)
             {
                 h[i]*=ratio;
                 h[i]+=f[i];
+                inner+=h[i]*f[i];
             }
+            
+            MPI_Allreduce(&inner,&f_h,1,MPI_TYPE0,MPI_SUM,world);
             
             for(int i=0;i<dim;i++)
             {
@@ -393,6 +399,24 @@ void Min_CG::run()
                     {
                         h_H[i][j]*=ratio;
                         h_H[i][j]+=f_H[i][j];
+                        f_h+=h_H[i][j]*f_H[i][j];
+                    }
+                }
+            }
+            
+            
+            if(f_h<0.0)
+            {
+                memcpy(h,f,size);
+                
+                for(int i=0;i<dim;i++)
+                {
+                    for(int j=0;j<dim;j++)
+                    {
+                        if(H_dof[i][j])
+                        {
+                            h_H[i][j]=f_H[i][j];
+                        }
                     }
                 }
             }
@@ -494,11 +518,16 @@ void Min_CG::run()
             
             ratio=(f_f-f_f0)/(f0_f0);
             
+            inner=0.0;
             for(int i=0;i<x_dim*atoms->natms;i++)
             {
                 h[i]*=ratio;
                 h[i]+=f[i];
+                inner+=h[i]*f[i];
             }
+            MPI_Allreduce(&inner,&f_h,1,MPI_TYPE0,MPI_SUM,world);
+            if(f_h<0.0)
+                memcpy(h,f,size);
             
             f0_f0=f_f;
             istp++;

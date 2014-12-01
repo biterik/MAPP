@@ -103,8 +103,12 @@ void Clock_NORMAL::run()
     
     TYPE0 tmp,curr_t;
     TYPE0 ratio,tot_ratio;
-    TYPE0 upper=1.0-SMALL;
-    TYPE0 lower=SMALL;
+//    TYPE0 upper=1.0-SMALL;
+//    TYPE0 lower=SMALL;
+    
+    TYPE0 upper=1.0;
+    TYPE0 lower=0.0;
+    
     int natms=atoms->natms;
     int tot_dim=atoms->vectors[c_n].dim*natms;
     
@@ -116,12 +120,13 @@ void Clock_NORMAL::run()
     
     for(int istep=0;istep<no_steps;istep++)
     {
+
         tot_t=delta_t;
         while(tot_t>0.0)
         {
             forcefield->calc_y();
             ratio=1.0;
-            
+
             for(int i=0;i<tot_dim;i++)
             {
                 tmp=c_d[i]*tot_t+c[i];
@@ -136,6 +141,7 @@ void Clock_NORMAL::run()
             
             for(int i=0;i<tot_dim;i++)
                 c[i]+=c_d[i]*curr_t;
+            
             atoms->update(c_n);
             tot_t-=curr_t;
         }

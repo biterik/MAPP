@@ -216,7 +216,6 @@ ReadCFG::ReadCFG(MAPP* mapp,int narg,char** args)
     delete [] H0;
     delete [] H_x;
     delete [] H_x_d;
-    
     delete [] ch_buff;
     
     if(atoms->my_p_no==0)
@@ -242,11 +241,19 @@ void ReadCFG::read_header()
     int icmp,jcmp,tmpno;
     char* strtmp1;
     char* strtmp2;
+    char* strtmp3;
     
     CREATE1D(strtmp1,MAXCHAR);
     CREATE1D(strtmp2,MAXCHAR);
+    CREATE1D(strtmp3,MAXCHAR);
     
-    if (narg==0) return;
+    if (narg==0)
+    {
+        delete [] strtmp3;
+        delete [] strtmp2;
+        delete [] strtmp1;
+        return;
+    }
     else if(narg==1)
     {
         if(!strcmp(command,".NO_VELOCITY."))
@@ -321,6 +328,13 @@ void ReadCFG::read_header()
         if(sscanf(command,
                   "Number of particles = %d",&tmpno)==1)
             atoms->tot_natms=tmpno;
+        else if(sscanf(command,"auxiliary[%d] = %s %s %s",&icmp,strtmp1,strtmp2,strtmp3)==4)
+        {
+            int mincomp=3+(3*vel_chk);
+            if(icmp+mincomp+1>entry_count)
+                error->abort("auxilary component larger than entry_count");
+        }
+
         else
             error->abort("unknown command: %s",command);
     }
@@ -338,6 +352,7 @@ void ReadCFG::read_header()
         error->abort("unknown command: %s",command);
     
     delete [] command;
+    delete [] strtmp3;
     delete [] strtmp2;
     delete [] strtmp1;
 }
