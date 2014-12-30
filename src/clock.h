@@ -12,11 +12,11 @@ namespace MAPP_NS {
         VecLst* vecs_comm;
 
         ThermoDynamics* thermo;
-        int pe_idx;
+        int fe_idx;
         int stress_idx;
-        
-
-        
+        int time_idx;
+        int cdof_n;
+        char* cdof;
     public:
         Clock(MAPP *);
         virtual ~Clock();
@@ -24,6 +24,7 @@ namespace MAPP_NS {
         virtual void run()=0;
         virtual void init()=0;
         virtual void fin()=0;
+        void rectify(TYPE0*);
         
     };
     

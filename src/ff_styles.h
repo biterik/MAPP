@@ -3,6 +3,6 @@
 #include "ff_fsm.h"
 #include "ff_meam.h"
 #include "ff_eam.h"
-#include "ff_eam_dmd.h"
 #include "ff_dmd.h"
-#include "ff_eam_dmd_full.h"
+#include "ff_dmd_I.h"
+#include "ff_dmd_II.h"

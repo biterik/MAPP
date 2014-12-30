@@ -7,12 +7,12 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		270483EC1A47CA7700952994 /* clock_cn.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 270483EA1A47CA7700952994 /* clock_cn.cpp */; };
 		270B59B31976F4CA00640B29 /* write.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 270B59B11976F4CA00640B29 /* write.cpp */; };
 		270B59B61976F6EA00640B29 /* write_cfg.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 270B59B41976F6EA00640B29 /* write_cfg.cpp */; };
 		271278C4198001A700C83264 /* ff_meam.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 271278C2198001A700C83264 /* ff_meam.cpp */; };
 		2725B52E1979A98900F5183C /* command_change_box.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2725B52C1979A98900F5183C /* command_change_box.cpp */; };
 		273292771A22C173003A0306 /* clock.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 273292751A22C173003A0306 /* clock.cpp */; };
-		2732927B1A22C33F003A0306 /* clock_normal.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 273292791A22C33F003A0306 /* clock_normal.cpp */; };
 		2732927E1A22D75D003A0306 /* clock_bdf.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2732927C1A22D75D003A0306 /* clock_bdf.cpp */; };
 		2756291C19A7083700FC4583 /* ff_dmd.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2756291A19A7083700FC4583 /* ff_dmd.cpp */; };
 		277A87E11974822D00D57402 /* atom_types.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 277A87AF1974822D00D57402 /* atom_types.cpp */; };
@@ -39,12 +39,15 @@
 		277A87F71974822D00D57402 /* xmath.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 277A87DF1974822D00D57402 /* xmath.cpp */; };
 		277A87FA1974827D00D57402 /* libmpi_cxx.1.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 277A87F81974827D00D57402 /* libmpi_cxx.1.dylib */; };
 		277A87FB1974827D00D57402 /* libmpi.1.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 277A87F91974827D00D57402 /* libmpi.1.dylib */; };
+		2781CEC01A33BB0500299D9C /* ff_dmd_I.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2781CEBE1A33BB0500299D9C /* ff_dmd_I.cpp */; };
+		2781CEC31A33F9B500299D9C /* ff_dmd_II.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2781CEC11A33F9B500299D9C /* ff_dmd_II.cpp */; };
+		278EB6101A38D81600283CEC /* clock_adams.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 278EB60E1A38D81600283CEC /* clock_adams.cpp */; };
 		2795CCE3199170DD00CDDF49 /* ff_eam.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2795CCE1199170DD00CDDF49 /* ff_eam.cpp */; };
-		279813E21A153FA30005A5B2 /* ff_eam_dmd_full.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 279813E01A153FA30005A5B2 /* ff_eam_dmd_full.cpp */; };
-		27AF6AB31998773A00DEE20C /* ff_eam_dmd.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 27AF6AB11998773A00DEE20C /* ff_eam_dmd.cpp */; };
 		27B65A6C19AF837500CA83A8 /* command_displace.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 27B65A6A19AF837500CA83A8 /* command_displace.cpp */; };
 		27B65A6F19AFAE6C00CA83A8 /* command_fix.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 27B65A6D19AFAE6C00CA83A8 /* command_fix.cpp */; };
 		27E4C8B719E2EFD300AC9C02 /* ff_fsm.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 27E4C8B519E2EFD300AC9C02 /* ff_fsm.cpp */; };
+		27EA5C821A463C8700097638 /* clock_mbdf.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 27EA5C801A463C8700097638 /* clock_mbdf.cpp */; };
+		27FD803B1A47567E00309867 /* clock_fe.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 27FD80391A47567E00309867 /* clock_fe.cpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -60,6 +63,8 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		270483EA1A47CA7700952994 /* clock_cn.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = clock_cn.cpp; sourceTree = "<group>"; };
+		270483EB1A47CA7700952994 /* clock_cn.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = clock_cn.h; sourceTree = "<group>"; };
 		270B59B11976F4CA00640B29 /* write.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = write.cpp; sourceTree = "<group>"; };
 		270B59B21976F4CA00640B29 /* write.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = write.h; sourceTree = "<group>"; };
 		270B59B41976F6EA00640B29 /* write_cfg.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = write_cfg.cpp; sourceTree = "<group>"; };
@@ -73,8 +78,6 @@
 		273292751A22C173003A0306 /* clock.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = clock.cpp; sourceTree = "<group>"; };
 		273292761A22C173003A0306 /* clock.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = clock.h; sourceTree = "<group>"; };
 		273292781A22C2DF003A0306 /* clock_styles.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = clock_styles.h; sourceTree = "<group>"; };
-		273292791A22C33F003A0306 /* clock_normal.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = clock_normal.cpp; sourceTree = "<group>"; };
-		2732927A1A22C33F003A0306 /* clock_normal.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = clock_normal.h; sourceTree = "<group>"; };
 		2732927C1A22D75D003A0306 /* clock_bdf.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = clock_bdf.cpp; sourceTree = "<group>"; };
 		2732927D1A22D75D003A0306 /* clock_bdf.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = clock_bdf.h; sourceTree = "<group>"; };
 		2756291A19A7083700FC4583 /* ff_dmd.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ff_dmd.cpp; sourceTree = "<group>"; };
@@ -129,12 +132,14 @@
 		277A87E01974822D00D57402 /* xmath.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = xmath.h; sourceTree = "<group>"; };
 		277A87F81974827D00D57402 /* libmpi_cxx.1.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libmpi_cxx.1.dylib; path = lib/libmpi_cxx.1.dylib; sourceTree = "<group>"; };
 		277A87F91974827D00D57402 /* libmpi.1.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libmpi.1.dylib; path = lib/libmpi.1.dylib; sourceTree = "<group>"; };
+		2781CEBE1A33BB0500299D9C /* ff_dmd_I.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ff_dmd_I.cpp; sourceTree = "<group>"; };
+		2781CEBF1A33BB0500299D9C /* ff_dmd_I.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ff_dmd_I.h; sourceTree = "<group>"; };
+		2781CEC11A33F9B500299D9C /* ff_dmd_II.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ff_dmd_II.cpp; sourceTree = "<group>"; };
+		2781CEC21A33F9B500299D9C /* ff_dmd_II.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ff_dmd_II.h; sourceTree = "<group>"; };
+		278EB60E1A38D81600283CEC /* clock_adams.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = clock_adams.cpp; sourceTree = "<group>"; };
+		278EB60F1A38D81600283CEC /* clock_adams.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = clock_adams.h; sourceTree = "<group>"; };
 		2795CCE1199170DD00CDDF49 /* ff_eam.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ff_eam.cpp; sourceTree = "<group>"; };
 		2795CCE2199170DD00CDDF49 /* ff_eam.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ff_eam.h; sourceTree = "<group>"; };
-		279813E01A153FA30005A5B2 /* ff_eam_dmd_full.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ff_eam_dmd_full.cpp; sourceTree = "<group>"; };
-		279813E11A153FA30005A5B2 /* ff_eam_dmd_full.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ff_eam_dmd_full.h; sourceTree = "<group>"; };
-		27AF6AB11998773A00DEE20C /* ff_eam_dmd.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ff_eam_dmd.cpp; sourceTree = "<group>"; };
-		27AF6AB21998773A00DEE20C /* ff_eam_dmd.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ff_eam_dmd.h; sourceTree = "<group>"; };
 		27B65A6A19AF837500CA83A8 /* command_displace.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = command_displace.cpp; sourceTree = "<group>"; };
 		27B65A6B19AF837500CA83A8 /* command_displace.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = command_displace.h; sourceTree = "<group>"; };
 		27B65A6D19AFAE6C00CA83A8 /* command_fix.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = command_fix.cpp; sourceTree = "<group>"; };
@@ -142,6 +147,10 @@
 		27D0418B1978AD2C001E2957 /* write_styles.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = write_styles.h; sourceTree = "<group>"; };
 		27E4C8B519E2EFD300AC9C02 /* ff_fsm.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ff_fsm.cpp; sourceTree = "<group>"; };
 		27E4C8B619E2EFD300AC9C02 /* ff_fsm.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ff_fsm.h; sourceTree = "<group>"; };
+		27EA5C801A463C8700097638 /* clock_mbdf.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = clock_mbdf.cpp; sourceTree = "<group>"; };
+		27EA5C811A463C8700097638 /* clock_mbdf.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = clock_mbdf.h; sourceTree = "<group>"; };
+		27FD80391A47567E00309867 /* clock_fe.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = clock_fe.cpp; sourceTree = "<group>"; };
+		27FD803A1A47567E00309867 /* clock_fe.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = clock_fe.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -174,10 +183,16 @@
 				277A87B01974822D00D57402 /* atom_types.h */,
 				277A87B11974822D00D57402 /* atoms.cpp */,
 				277A87B21974822D00D57402 /* atoms.h */,
+				278EB60E1A38D81600283CEC /* clock_adams.cpp */,
+				278EB60F1A38D81600283CEC /* clock_adams.h */,
 				2732927C1A22D75D003A0306 /* clock_bdf.cpp */,
 				2732927D1A22D75D003A0306 /* clock_bdf.h */,
-				273292791A22C33F003A0306 /* clock_normal.cpp */,
-				2732927A1A22C33F003A0306 /* clock_normal.h */,
+				270483EA1A47CA7700952994 /* clock_cn.cpp */,
+				270483EB1A47CA7700952994 /* clock_cn.h */,
+				27FD80391A47567E00309867 /* clock_fe.cpp */,
+				27FD803A1A47567E00309867 /* clock_fe.h */,
+				27EA5C801A463C8700097638 /* clock_mbdf.cpp */,
+				27EA5C811A463C8700097638 /* clock_mbdf.h */,
 				273292781A22C2DF003A0306 /* clock_styles.h */,
 				273292751A22C173003A0306 /* clock.cpp */,
 				273292761A22C173003A0306 /* clock.h */,
@@ -190,12 +205,12 @@
 				2725B52B1979A95E00F5183C /* command_styles.h */,
 				277A87B31974822D00D57402 /* error.cpp */,
 				277A87B41974822D00D57402 /* error.h */,
+				2781CEBE1A33BB0500299D9C /* ff_dmd_I.cpp */,
+				2781CEBF1A33BB0500299D9C /* ff_dmd_I.h */,
+				2781CEC11A33F9B500299D9C /* ff_dmd_II.cpp */,
+				2781CEC21A33F9B500299D9C /* ff_dmd_II.h */,
 				2756291A19A7083700FC4583 /* ff_dmd.cpp */,
 				2756291B19A7083700FC4583 /* ff_dmd.h */,
-				279813E01A153FA30005A5B2 /* ff_eam_dmd_full.cpp */,
-				279813E11A153FA30005A5B2 /* ff_eam_dmd_full.h */,
-				27AF6AB11998773A00DEE20C /* ff_eam_dmd.cpp */,
-				27AF6AB21998773A00DEE20C /* ff_eam_dmd.h */,
 				2795CCE1199170DD00CDDF49 /* ff_eam.cpp */,
 				2795CCE2199170DD00CDDF49 /* ff_eam.h */,
 				277A87B71974822D00D57402 /* ff_fs.cpp */,
@@ -306,7 +321,6 @@
 			files = (
 				277A87EA1974822D00D57402 /* md.cpp in Sources */,
 				2732927E1A22D75D003A0306 /* clock_bdf.cpp in Sources */,
-				27AF6AB31998773A00DEE20C /* ff_eam_dmd.cpp in Sources */,
 				27B65A6F19AFAE6C00CA83A8 /* command_fix.cpp in Sources */,
 				277A87E91974822D00D57402 /* MAPP.cpp in Sources */,
 				277A87F41974822D00D57402 /* thermo_dynamics.cpp in Sources */,
@@ -316,11 +330,13 @@
 				277A87E11974822D00D57402 /* atom_types.cpp in Sources */,
 				273292771A22C173003A0306 /* clock.cpp in Sources */,
 				277A87E31974822D00D57402 /* error.cpp in Sources */,
+				278EB6101A38D81600283CEC /* clock_adams.cpp in Sources */,
 				270B59B61976F6EA00640B29 /* write_cfg.cpp in Sources */,
 				277A87F11974822D00D57402 /* rand_engine.cpp in Sources */,
 				27E4C8B719E2EFD300AC9C02 /* ff_fsm.cpp in Sources */,
 				270B59B31976F4CA00640B29 /* write.cpp in Sources */,
 				277A87E71974822D00D57402 /* line_search.cpp in Sources */,
+				270483EC1A47CA7700952994 /* clock_cn.cpp in Sources */,
 				2725B52E1979A98900F5183C /* command_change_box.cpp in Sources */,
 				27B65A6C19AF837500CA83A8 /* command_displace.cpp in Sources */,
 				2795CCE3199170DD00CDDF49 /* ff_eam.cpp in Sources */,
@@ -328,14 +344,16 @@
 				277A87E61974822D00D57402 /* ff_lj.cpp in Sources */,
 				277A87EC1974822D00D57402 /* memory.cpp in Sources */,
 				277A87F21974822D00D57402 /* read.cpp in Sources */,
-				279813E21A153FA30005A5B2 /* ff_eam_dmd_full.cpp in Sources */,
 				277A87E41974822D00D57402 /* ff.cpp in Sources */,
-				2732927B1A22C33F003A0306 /* clock_normal.cpp in Sources */,
 				277A87F01974822D00D57402 /* neighbor.cpp in Sources */,
+				27EA5C821A463C8700097638 /* clock_mbdf.cpp in Sources */,
 				277A87E81974822D00D57402 /* main.cpp in Sources */,
 				277A87E51974822D00D57402 /* ff_fs.cpp in Sources */,
 				277A87F51974822D00D57402 /* vecmath.cpp in Sources */,
+				2781CEC01A33BB0500299D9C /* ff_dmd_I.cpp in Sources */,
 				277A87EF1974822D00D57402 /* min_l-bfgs.cpp in Sources */,
+				27FD803B1A47567E00309867 /* clock_fe.cpp in Sources */,
+				2781CEC31A33F9B500299D9C /* ff_dmd_II.cpp in Sources */,
 				277A87ED1974822D00D57402 /* min.cpp in Sources */,
 				277A87F71974822D00D57402 /* xmath.cpp in Sources */,
 				271278C4198001A700C83264 /* ff_meam.cpp in Sources */,

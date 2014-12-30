@@ -15,7 +15,7 @@ namespace MAPP_NS {
         int x_dim;
         int f_n;
         int h_n;
-        int type_n;
+        
         
         TYPE0** H_prev;
         TYPE0** B_prev;

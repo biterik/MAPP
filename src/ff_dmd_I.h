@@ -1,8 +1,9 @@
 #ifdef FF_Style
-FFStyle(ForceField_eam_dmd_full,DMD_FULL)
+    FFStyle(ForceField_DMD_I,DMD_I)
 #else
-#ifndef __MAPP__ff_eam_dmd_full__
-#define __MAPP__ff_eam_dmd_full__
+
+#ifndef __MAPP__ff_dmd_I__
+#define __MAPP__ff_dmd_I__
 
 #include <stdio.h>
 #include <iostream>
@@ -10,7 +11,7 @@ FFStyle(ForceField_eam_dmd_full,DMD_FULL)
 #include "atoms.h"
 namespace MAPP_NS
 {
-    class ForceField_eam_dmd_full : public ForceField
+    class ForceField_DMD_I : public ForceField
     {
     private:
         int no_types;
@@ -74,27 +75,30 @@ namespace MAPP_NS
         int neigh_lst_sz_sz;
         /*--------------------------------------------*/
         
-        TYPE0 Mat(int,int,int);
+        TYPE0 Mat(int,int,int);       
         
         TYPE0 calc_ent(TYPE0);
         
     public:
-        ForceField_eam_dmd_full(MAPP *);
-        ~ForceField_eam_dmd_full();
+        ForceField_DMD_I(MAPP *);
+        ~ForceField_DMD_I();
         void force_calc(int,TYPE0*);
         TYPE0 energy_calc();
         void init();
         void fin();
         void coef(int,char**);
-
+        
         void create_2nd_neigh_lst();
         TYPE0 calc_g(int,TYPE0,TYPE0*,TYPE0*);
-        void calc_y();
+        void c_d_calc();
     };
     
     
     
 }
-#endif 
+
+
 #endif
+#endif
+
 

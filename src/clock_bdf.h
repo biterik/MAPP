@@ -11,31 +11,48 @@ namespace MAPP_NS {
     {
     private:
     protected:
-        int order;
-        TYPE0* alpha;
-        TYPE0 beta;
-        TYPE0 ave_err;
-
+        int c_n,c_d_n,dof_tot,dof_lcl;
+        int max_iter,no_steps,max_order;
+        TYPE0 min_gamma,gamma_red,slope;
+        TYPE0 m_tol,a_tol,e_tol;
+        TYPE0 min_del_t,max_del_t,initial_del_t;
+        TYPE0 eq_ratio;
         
         
-        TYPE0 delta_t;
-        VecLst* vecs_comm;
         
+        TYPE0* y_0;
         
-        TYPE0** y;
+        // stuff for solution
+        TYPE0* e_n;
         TYPE0* a;
-        TYPE0* g;
-        TYPE0* c0;
         TYPE0* g0;
+        TYPE0* g;
         TYPE0* h;
-        int* y_list;
-        int c_n,c_d_n;
-        int tot_dim;
-        void solve(TYPE0);
-        void line_search();
-        TYPE0 gamma_red,slope;
-        int no_steps;
-        int tmp_order;
+        TYPE0* c0;
+        TYPE0 beta;
+        // stuff for book keeping
+        TYPE0* t;
+        TYPE0** y;
+        TYPE0* dy;
+        
+        // stuff for coefficient
+        TYPE0 alpha_dy_0;
+        TYPE0* alpha_y;
+        TYPE0 dalpha_dy_0;
+        TYPE0* dalpha_y;
+        TYPE0* coef;
+        
+        int lo_ord_avail,hi_ord_avail;
+        TYPE0 lo_err,hi_err,err;
+        
+        
+        TYPE0 solve(TYPE0,int);
+        int interpolate(TYPE0,int);
+        void err_coef(TYPE0*,int);
+        void err_est(int);
+        void hi_lo_err_est(TYPE0,int);
+        TYPE0* lwr_alpha;
+        TYPE0 lwr_alpha_dy,lwr_alpha_y;
         
     public:
         Clock_BDF(MAPP *,int,char**);
@@ -43,7 +60,6 @@ namespace MAPP_NS {
         void run();
         void init();
         void fin();
-        
     };
 }
 

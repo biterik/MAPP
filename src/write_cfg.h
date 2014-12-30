@@ -20,6 +20,7 @@ namespace MAPP_NS {
         int type_cmp;
         int sorting;
         int tot_dim;
+        int c_n;
         void write_file_dmd(int);
         void write_file_md(int);        
     public:

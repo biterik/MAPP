@@ -106,9 +106,9 @@ void Min_LBFGS::init()
     CREATE1D(y_list,m_it);
     x_dim=atoms->vectors[0].dim;
     if(mapp->mode==DMD)
-        type_n=atoms->find("c");
+        c_type_n=atoms->find("c");
     else
-        type_n=atoms->find("type");
+        c_type_n=atoms->find("type");
 
     f_n=atoms->find_exist("f");
     if(f_n<0)
@@ -136,16 +136,28 @@ void Min_LBFGS::init()
 
     int* tmp_lst;
     int icurs=0;
+    
     if(dof_n<0)
         CREATE1D(tmp_lst,2*m_it+7);
     else
     {
-        CREATE1D(tmp_lst,2*m_it+8);
-        tmp_lst[icurs++]=dof_n;
+        if(mapp->mode==MD)
+        {
+            CREATE1D(tmp_lst,2*m_it+8);
+            tmp_lst[icurs++]=dof_n;
+
+        }
+        else if (mapp->mode==DMD)
+        {
+            CREATE1D(tmp_lst,2*m_it+9);
+            tmp_lst[icurs++]=dof_n;
+            cdof_n=atoms->find("cdof");
+            tmp_lst[icurs++]=cdof_n;
+        }
     }
     
     tmp_lst[icurs++]=0;
-    tmp_lst[icurs++]=type_n;
+    tmp_lst[icurs++]=c_type_n;
     tmp_lst[icurs++]=id_n;
     tmp_lst[icurs++]=f_n;
     for (int i=0;i<m_it;i++)

@@ -90,7 +90,7 @@ namespace MAPP_NS
         
         void create_2nd_neigh_lst();
         TYPE0 calc_g(int,TYPE0,TYPE0*,TYPE0*);
-        void calc_y();
+        void c_d_calc();
     };
     
     

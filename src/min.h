@@ -28,8 +28,9 @@ namespace MAPP_NS {
         int pe_idx;
         int stress_idx;
         char* dof;
-        int dof_n;
+        int dof_n,cdof_n;
         int id_n;
+        int c_type_n;
     public:
         Min(MAPP *);
         virtual ~Min();

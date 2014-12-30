@@ -35,7 +35,7 @@ void Error::abort(const char* msg,...)
     vsprintf (err_msg,msg, args);
     
     if (my_no==0)
-        printf("ABORTED: %s \n"
+        printf("ABORTED! %s \n"
                ,err_msg);
     va_end (args);
     MPI_Finalize();

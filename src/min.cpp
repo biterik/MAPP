@@ -22,8 +22,14 @@ Min::Min(MAPP* mapp):InitPtrs(mapp)
     err=LS_S;
     
     char** args;
-    int narg=mapp->parse_line((char*)
-    "PE S_xx S_yy S_zz S_yz S_zx S_xy",args);
+    
+    int narg;
+    if(mapp->mode==MD)
+        narg=mapp->parse_line((char*)
+        "PE S_xx S_yy S_zz S_yz S_zx S_xy",args);
+    else if (mapp->mode==DMD)
+        narg=mapp->parse_line((char*)
+        "FE S_xx S_yy S_zz S_yz S_zx S_xy",args);
     
     pe_idx=0;
     stress_idx=1;

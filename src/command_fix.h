@@ -12,6 +12,8 @@ namespace MAPP_NS {
     {
     private:
     protected:
+        void md(int,char**);
+        void dmd(int,char**);
     public:
         CommandFix(MAPP*,int,char**);
         ~CommandFix();

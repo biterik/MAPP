@@ -76,6 +76,14 @@ WriteCFG::WriteCFG(MAPP* mapp,int narg
     if(vec_list[0]!=0)
         error->abort("vector x should be included");
     
+    if(mapp->mode==DMD)
+    {
+        c_n=atoms->find("c");
+        if(vec_list[1]!=c_n)
+            error->abort("vector c should be included");
+    }
+    
+    
     if(mapp->mode==MD)
     {
         type_cmp=atoms->find("type");
@@ -261,6 +269,7 @@ void WriteCFG::write_file_dmd(int stp)
     
     
     FILE* fp=NULL;
+    FILE* fp_usr=NULL;
     
     if(atoms->my_p_no==0)
     {
@@ -269,6 +278,14 @@ void WriteCFG::write_file_dmd(int stp)
         sprintf (filename, "%s.%08d.cfg",file_name,stp);
         fp=fopen(filename,"w");
         delete [] filename;
+        
+
+        CREATE1D(filename,MAXCHAR);
+        sprintf (filename, "%s.%08d.usr",file_name,stp);
+        fp_usr=fopen(filename,"w");
+        delete [] filename;
+        
+        
         
         // write the header
         fprintf(fp,"Number of particles = %d\n",atoms->tot_natms);
@@ -337,6 +354,17 @@ void WriteCFG::write_file_dmd(int stp)
             }
             
             
+            TYPE0* c;
+            atoms->vectors[c_n].ret_dump(c);
+            TYPE0 tmp;
+            for(int i=0;i<tot_natms;i++)
+            {
+                tmp=1.0-c[sort[i]];
+                fprintf(fp_usr,"%f %f %f",tmp,tmp,tmp);
+                fprintf(fp_usr,"\n");
+            }
+            
+            
             if(tot_natms)
                 delete [] sort;
         }
@@ -380,9 +408,20 @@ void WriteCFG::write_file_dmd(int stp)
                     atoms->vectors[vec_list[j]].print_dump(fp,i);
                 fprintf(fp,"\n");
             }
+            
+            TYPE0* c;
+            TYPE0 tmp;
+            atoms->vectors[c_n].ret_dump(c);
+            for(int i=0;i<tot_natms;i++)
+            {
+                tmp=1.0-c[i];
+                fprintf(fp_usr,"%f %f %f",tmp,tmp,tmp);
+                fprintf(fp_usr,"\n");
+            }
         }
         
         fclose(fp);
+        fclose(fp_usr);
     }
     
     for(int i=0;i<no_vecs;i++)

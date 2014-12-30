@@ -1792,7 +1792,7 @@ void ForceField_DMD::interpolate(int n,TYPE0 delta
  allocate the arrays
  --------------------------------------------*/
 void ForceField_DMD::interpolate_m(int n,TYPE0 delta
-                                            ,TYPE0** spline)
+,TYPE0** spline)
 {
     spline[0][1]=spline[1][0]-spline[0][0];
     spline[1][1]=0.5*(spline[2][0]-spline[0][0]);
@@ -2221,14 +2221,15 @@ void ForceField_DMD::create_2nd_neigh_lst()
 TYPE0 ForceField_DMD::
 Mat(int crd_i,int crd_j,int itype)
 {
-    return 5.0*beta;
+    //return 3.5*beta;
+    return 5.2*beta;
 }
 /*--------------------------------------------
  return M_{ij}^{\alpha}
  --------------------------------------------*/
 TYPE0 ForceField_DMD::calc_ent(TYPE0 x)
 {
-    if(x<1.0e-8 || 0.99999999 < x)
+    if(x<1.0e-8 || 0.99999999<x)
         return 0.0;
     else
         return x*log(x)+(1-x)*log(1-x);
@@ -2237,7 +2238,7 @@ TYPE0 ForceField_DMD::calc_ent(TYPE0 x)
 /*--------------------------------------------
  claculate F and dF and dFF
  --------------------------------------------*/
-void ForceField_DMD::calc_y()
+void ForceField_DMD::c_d_calc()
 {
     TYPE0* x;
     atoms->vectors[x_n].ret(x);
@@ -2346,15 +2347,20 @@ void ForceField_DMD::calc_y()
         for(int itype=0;itype<no_types;itype++)
         {
             n[icomp+itype]+=c_0[itype]+1.5*kbT*log(x[(3+no_types)*iatm+3+itype]);
+            //cout << n[icomp+itype] <<endl;
             n[icomp+itype]*=beta;
         }
     }
     
     atoms->update(n_n);
     
+    TYPE0 max_cd=0.0,t_max=0.0;
+    TYPE0 inner=0.0;
+    TYPE0 tot_inner=0.0;
     
     for(iatm=0;iatm<natms;iatm++)
     {
+        //cout << n[iatm]*kbT << endl;
         icomp=no_types*iatm;
         for(int j=0;j<neigh_lst_sz[iatm];j++)
         {
@@ -2374,7 +2380,20 @@ void ForceField_DMD::calc_y()
                     c_d[jcomp+itype]-=s_ij;
             }
         }
+        
+        for(int itype=0;itype<no_types;itype++)
+        {
+            inner+=c_d[icomp+itype]*c_d[icomp+itype];
+            max_cd=MAX(max_cd,fabs(c_d[icomp+itype]));
+        }
     }
+    
+    MPI_Allreduce(&inner,&tot_inner,1,MPI_TYPE0,MPI_SUM,world);
+    MPI_Allreduce(&max_cd,&t_max,1,MPI_TYPE0,MPI_MAX,world);
+    tot_inner=sqrt(tot_inner);
+    
+    //printf("|c_d| = %e max = %e\n",tot_inner,t_max);
+    
     
 }
 /*--------------------------------------------

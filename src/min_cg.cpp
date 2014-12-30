@@ -82,9 +82,9 @@ void Min_CG::init()
         f_n=atoms->add<TYPE0>(0,x_dim,"f");
     
     if(mapp->mode==DMD)
-        type_n=atoms->find("c");
+        c_type_n=atoms->find("c");
     else
-        type_n=atoms->find("type");
+        c_type_n=atoms->find("type");
     
     x_prev_n=atoms->add<TYPE0>(0,x_dim,"x_prev");
     f_prev_n=atoms->add<TYPE0>(0,x_dim,"f_prev");
@@ -94,9 +94,17 @@ void Min_CG::init()
     
     dof_n=atoms->find_exist("dof");
     if(dof_n<0)
-        vecs_comm=new VecLst(mapp,7,0,type_n,f_n,x_prev_n,f_prev_n,h_n,id_n);
+        vecs_comm=new VecLst(mapp,7,0,c_type_n,f_n,x_prev_n,f_prev_n,h_n,id_n);
     else
-        vecs_comm=new VecLst(mapp,8,0,type_n,f_n,x_prev_n,f_prev_n,h_n,dof_n,id_n);
+    {
+        if(mapp->mode==MD)
+            vecs_comm=new VecLst(mapp,8,0,c_type_n,f_n,x_prev_n,f_prev_n,h_n,dof_n,id_n);
+        else
+        {
+            cdof_n=atoms->find_exist("cdof");
+            vecs_comm=new VecLst(mapp,9,0,c_type_n,f_n,x_prev_n,f_prev_n,h_n,dof_n,cdof_n,id_n);
+        }
+    }
 
     vecs_comm->add_update(0);
     atoms->reset_comm(vecs_comm);

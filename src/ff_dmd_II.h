@@ -1,18 +1,20 @@
-
 #ifdef FF_Style
-    FFStyle(ForceField_eam_dmd,EAM_DMD)
+FFStyle(ForceField_DMD_II,DMD_II)
 #else
-#ifndef __MAPP__ff_eam_dmd__
-#define __MAPP__ff_eam_dmd__
 
+#ifndef __MAPP__ff_dmd_II__
+#define __MAPP__ff_dmd_II__
+
+#include <stdio.h>
 #include <iostream>
 #include "ff.h"
 #include "atoms.h"
 namespace MAPP_NS
 {
-    class ForceField_eam_dmd : public ForceField
+    class ForceField_DMD_II : public ForceField
     {
     private:
+        int no_types;
     protected:
         TYPE0*** F_arr;
         TYPE0*** phi_r_arr;
@@ -33,23 +35,26 @@ namespace MAPP_NS
         
         void set_arrays();
         void interpolate(int,TYPE0,TYPE0**);
-        
+        void interpolate_m(int,TYPE0,TYPE0**);
         
         int** type2rho;
         int** type2phi;
         
-        int rho_n,f_n,type_n,x_n,dF_n;
+        int f_n,type_n,x_n,c_n,E_n,dE_n,ddE_n,
+        n_n,s_n,crd_n,t_n,v_n,c_d_n;
         TYPE0* nrgy_strss;
         TYPE0 cut_sq;
         TYPE0 cut_sq_mod;
-        TYPE0 rc,mod_rc,c_0,kbT;
-        TYPE0 aug_fac;
+        TYPE0 rc,mod_rc,kbT,beta;
+        TYPE0* c_0;
         
         /*--------------------------------------------*/
-        TYPE0* drhoi_dr;
-        TYPE0* drhoj_dr;
-        TYPE0* drhoi_dalpha;
-        TYPE0* drhoj_dalpha;
+        TYPE0* rho;
+        TYPE0* drho_dr;
+        TYPE0* drho_dalpha;
+        TYPE0* phi;
+        TYPE0* dphi_dr;
+        TYPE0* dphi_dalpha;
         int max_pairs;
         /*--------------------------------------------*/
         
@@ -63,22 +68,35 @@ namespace MAPP_NS
         void set_weight_abs(int);
         void rho_calc(TYPE0,TYPE0,int,int);
         void phi_calc(TYPE0,TYPE0,int,int);
+        /*--------------------------------------------*/
+        TYPE0 r_crd,rsq_crd;
+        int** neigh_lst;
+        int* neigh_lst_sz;
+        int neigh_lst_sz_sz;
+        /*--------------------------------------------*/
+                
+        TYPE0 mat(TYPE0,TYPE0,int);
+        TYPE0 dmat(TYPE0,TYPE0,int);
+        
+        TYPE0 calc_ent(TYPE0);
+        
     public:
-        ForceField_eam_dmd(MAPP *);
-        ~ForceField_eam_dmd();
+        ForceField_DMD_II(MAPP *);
+        ~ForceField_DMD_II();
         void force_calc(int,TYPE0*);
         TYPE0 energy_calc();
         void init();
         void fin();
         void coef(int,char**);
-
-        void create_2nd_neigh_lst(){};
-        TYPE0 calc_g(int,TYPE0,TYPE0*,TYPE0*){return 0.0;};
-        void calc_y(){};
+        
+        void create_2nd_neigh_lst();
+        TYPE0 calc_g(int,TYPE0,TYPE0*,TYPE0*);
+        void c_d_calc();
     };
     
     
     
 }
+
 #endif
 #endif
