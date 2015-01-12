@@ -12,6 +12,9 @@ enum{NOT_SET,FUNC_FL,SET_FL,FINNIS_FL};
 ForceField_eam::
 ForceField_eam(MAPP* mapp) : ForceField(mapp)
 {
+    if(mapp->mode!=MD)
+        error->abort("this forcefield works only with md mode");
+    
     allocated=0;
     eam_mode=NOT_SET;
     max_pairs=0;
@@ -142,12 +145,12 @@ force_calc(int st_clc,TYPE0* en_st)
                     nrgy_strss[0]+=phi;
                     if (st_clc)
                     {
-                        nrgy_strss[1]+=fpair*dx0*dx0;
-                        nrgy_strss[2]+=fpair*dx1*dx1;
-                        nrgy_strss[3]+=fpair*dx2*dx2;
-                        nrgy_strss[4]+=fpair*dx1*dx2;
-                        nrgy_strss[5]+=fpair*dx2*dx0;
-                        nrgy_strss[6]+=fpair*dx0*dx1;
+                        nrgy_strss[1]-=fpair*dx0*dx0;
+                        nrgy_strss[2]-=fpair*dx1*dx1;
+                        nrgy_strss[3]-=fpair*dx2*dx2;
+                        nrgy_strss[4]-=fpair*dx1*dx2;
+                        nrgy_strss[5]-=fpair*dx2*dx0;
+                        nrgy_strss[6]-=fpair*dx0*dx1;
                     }
                 }
                 else
@@ -155,12 +158,12 @@ force_calc(int st_clc,TYPE0* en_st)
                     nrgy_strss[0]+=0.5*phi;
                     if (st_clc)
                     {
-                        nrgy_strss[1]+=0.5*fpair*dx0*dx0;
-                        nrgy_strss[2]+=0.5*fpair*dx1*dx1;
-                        nrgy_strss[3]+=0.5*fpair*dx2*dx2;
-                        nrgy_strss[4]+=0.5*fpair*dx1*dx2;
-                        nrgy_strss[5]+=0.5*fpair*dx2*dx0;
-                        nrgy_strss[6]+=0.5*fpair*dx0*dx1;
+                        nrgy_strss[1]-=0.5*fpair*dx0*dx0;
+                        nrgy_strss[2]-=0.5*fpair*dx1*dx1;
+                        nrgy_strss[3]-=0.5*fpair*dx2*dx2;
+                        nrgy_strss[4]-=0.5*fpair*dx1*dx2;
+                        nrgy_strss[5]-=0.5*fpair*dx2*dx0;
+                        nrgy_strss[6]-=0.5*fpair*dx0*dx1;
                     }
                 }
                 
@@ -219,24 +222,24 @@ force_calc(int st_clc,TYPE0* en_st)
                     
                     if (st_clc)
                     {
-                        nrgy_strss[1]+=fpair*dx0*dx0;
-                        nrgy_strss[2]+=fpair*dx1*dx1;
-                        nrgy_strss[3]+=fpair*dx2*dx2;
-                        nrgy_strss[4]+=fpair*dx1*dx2;
-                        nrgy_strss[5]+=fpair*dx2*dx0;
-                        nrgy_strss[6]+=fpair*dx0*dx1;
+                        nrgy_strss[1]-=fpair*dx0*dx0;
+                        nrgy_strss[2]-=fpair*dx1*dx1;
+                        nrgy_strss[3]-=fpair*dx2*dx2;
+                        nrgy_strss[4]-=fpair*dx1*dx2;
+                        nrgy_strss[5]-=fpair*dx2*dx0;
+                        nrgy_strss[6]-=fpair*dx0*dx1;
                     }
                 }
                 else
                 {
                     if (st_clc)
                     {
-                        nrgy_strss[1]+=0.5*fpair*dx0*dx0;
-                        nrgy_strss[2]+=0.5*fpair*dx1*dx1;
-                        nrgy_strss[3]+=0.5*fpair*dx2*dx2;
-                        nrgy_strss[4]+=0.5*fpair*dx1*dx2;
-                        nrgy_strss[5]+=0.5*fpair*dx2*dx0;
-                        nrgy_strss[6]+=0.5*fpair*dx0*dx1;
+                        nrgy_strss[1]-=0.5*fpair*dx0*dx0;
+                        nrgy_strss[2]-=0.5*fpair*dx1*dx1;
+                        nrgy_strss[3]-=0.5*fpair*dx2*dx2;
+                        nrgy_strss[4]-=0.5*fpair*dx1*dx2;
+                        nrgy_strss[5]-=0.5*fpair*dx2*dx0;
+                        nrgy_strss[6]-=0.5*fpair*dx0*dx1;
                     }
                 }
             }
@@ -250,6 +253,7 @@ force_calc(int st_clc,TYPE0* en_st)
             en_st[i]=0.0;
         
         MPI_Allreduce(nrgy_strss,en_st,7,MPI_TYPE0,MPI_SUM,world);
+
     }
     else
     {

@@ -26,6 +26,9 @@ using namespace std;
 ForceField_fsm::
 ForceField_fsm(MAPP* mapp) : ForceField(mapp)
 {
+    if(mapp->mode!=MD)
+        error->abort("this forcefield works only with md mode");
+    
     if(atoms->dimension!=3)
         error->abort("to use FS potential, dimension of the box should be 3");
     
@@ -486,24 +489,24 @@ force_calc(int st_clc,TYPE0* en_st)
                             
                             if (st_clc)
                             {
-                                nrgy_strss[1]+=rho_coef*dx0*dx0;
-                                nrgy_strss[2]+=rho_coef*dx1*dx1;
-                                nrgy_strss[3]+=rho_coef*dx2*dx2;
-                                nrgy_strss[4]+=rho_coef*dx1*dx2;
-                                nrgy_strss[5]+=rho_coef*dx2*dx0;
-                                nrgy_strss[6]+=rho_coef*dx0*dx1;
+                                nrgy_strss[1]-=rho_coef*dx0*dx0;
+                                nrgy_strss[2]-=rho_coef*dx1*dx1;
+                                nrgy_strss[3]-=rho_coef*dx2*dx2;
+                                nrgy_strss[4]-=rho_coef*dx1*dx2;
+                                nrgy_strss[5]-=rho_coef*dx2*dx0;
+                                nrgy_strss[6]-=rho_coef*dx0*dx1;
                             }
                         }
                         else
                         {
                             if (st_clc)
                             {
-                                nrgy_strss[1]+=0.5*rho_coef*dx0*dx0;
-                                nrgy_strss[2]+=0.5*rho_coef*dx1*dx1;
-                                nrgy_strss[3]+=0.5*rho_coef*dx2*dx2;
-                                nrgy_strss[4]+=0.5*rho_coef*dx1*dx2;
-                                nrgy_strss[5]+=0.5*rho_coef*dx2*dx0;
-                                nrgy_strss[6]+=0.5*rho_coef*dx0*dx1;
+                                nrgy_strss[1]-=0.5*rho_coef*dx0*dx0;
+                                nrgy_strss[2]-=0.5*rho_coef*dx1*dx1;
+                                nrgy_strss[3]-=0.5*rho_coef*dx2*dx2;
+                                nrgy_strss[4]-=0.5*rho_coef*dx1*dx2;
+                                nrgy_strss[5]-=0.5*rho_coef*dx2*dx0;
+                                nrgy_strss[6]-=0.5*rho_coef*dx0*dx1;
                             }
                         }
                     }
@@ -511,31 +514,31 @@ force_calc(int st_clc,TYPE0* en_st)
                     if(rsq < cut_sq_phi[curs])
                     {
                         dr_phi=r-sqrt(cut_sq_phi[curs]);
-                        phi_coef=-2*dr_phi*(mat_k_1[curs]+mat_k_2[curs]*r+mat_k_3[curs]*rsq);
-                        phi_coef-=dr_phi*dr_phi*(mat_k_2[curs]+2*mat_k_3[curs]*r);
-                        phi_coef*=1.0/r;
+                        phi_coef=2.0*dr_phi*(mat_k_1[curs]+mat_k_2[curs]*r+mat_k_3[curs]*rsq)
+                        +dr_phi*dr_phi*(mat_k_2[curs]+2.0*mat_k_3[curs]*r);
+                        phi_coef*=-1.0/r;
                         
                         
-                        f[icomp]+=0.5*dx0*phi_coef;
-                        f[icomp+1]+=0.5*dx1*phi_coef;
-                        f[icomp+2]+=0.5*dx2*phi_coef;
+                        f[icomp]+=dx0*phi_coef;
+                        f[icomp+1]+=dx1*phi_coef;
+                        f[icomp+2]+=dx2*phi_coef;
                         
                         
                         if(jatm<natms)
                         {
-                            f[jcomp]-=0.5*dx0*phi_coef;
-                            f[jcomp+1]-=0.5*dx1*phi_coef;
-                            f[jcomp+2]-=0.5*dx2*phi_coef;
+                            f[jcomp]-=dx0*phi_coef;
+                            f[jcomp+1]-=dx1*phi_coef;
+                            f[jcomp+2]-=dx2*phi_coef;
                             
                             nrgy_strss[0]+=dr_phi*dr_phi*(mat_k_1[curs]+mat_k_2[curs]*r+mat_k_3[curs]*rsq);
                             if (st_clc)
                             {
-                                nrgy_strss[1]+=phi_coef*dx0*dx0;
-                                nrgy_strss[2]+=phi_coef*dx1*dx1;
-                                nrgy_strss[3]+=phi_coef*dx2*dx2;
-                                nrgy_strss[4]+=phi_coef*dx1*dx2;
-                                nrgy_strss[5]+=phi_coef*dx2*dx0;
-                                nrgy_strss[6]+=phi_coef*dx0*dx1;
+                                nrgy_strss[1]-=phi_coef*dx0*dx0;
+                                nrgy_strss[2]-=phi_coef*dx1*dx1;
+                                nrgy_strss[3]-=phi_coef*dx2*dx2;
+                                nrgy_strss[4]-=phi_coef*dx1*dx2;
+                                nrgy_strss[5]-=phi_coef*dx2*dx0;
+                                nrgy_strss[6]-=phi_coef*dx0*dx1;
                             }
                         }
                         else
@@ -543,12 +546,12 @@ force_calc(int st_clc,TYPE0* en_st)
                             nrgy_strss[0]+=0.5*dr_phi*dr_phi*(mat_k_1[curs]+mat_k_2[curs]*r+mat_k_3[curs]*rsq);
                             if (st_clc)
                             {
-                                nrgy_strss[1]+=0.5*phi_coef*dx0*dx0;
-                                nrgy_strss[2]+=0.5*phi_coef*dx1*dx1;
-                                nrgy_strss[3]+=0.5*phi_coef*dx2*dx2;
-                                nrgy_strss[4]+=0.5*phi_coef*dx1*dx2;
-                                nrgy_strss[5]+=0.5*phi_coef*dx2*dx0;
-                                nrgy_strss[6]+=0.5*phi_coef*dx0*dx1;
+                                nrgy_strss[1]-=0.5*phi_coef*dx0*dx0;
+                                nrgy_strss[2]-=0.5*phi_coef*dx1*dx1;
+                                nrgy_strss[3]-=0.5*phi_coef*dx2*dx2;
+                                nrgy_strss[4]-=0.5*phi_coef*dx1*dx2;
+                                nrgy_strss[5]-=0.5*phi_coef*dx2*dx0;
+                                nrgy_strss[6]-=0.5*phi_coef*dx0*dx1;
                             }
                         }
                     }

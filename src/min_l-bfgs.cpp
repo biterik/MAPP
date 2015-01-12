@@ -184,6 +184,7 @@ void Min_LBFGS::init()
     CREATE1D(alpha,m_it);
     line_search=new LineSearch_BackTrack(mapp,vecs_comm);
     line_search->h_n=h_n;
+    line_search->thermo=thermo;
     
     for(int i=0;i<dim;i++)
         for(int j=0;j<dim;j++)
@@ -459,7 +460,10 @@ void Min_LBFGS::run()
             for(int i=0;i<x_dim*atoms->natms;i++)
                 f[i]=0.0;
             
+            thermo->start_force_time();
             forcefield->force_calc(1,energy_stress);
+            thermo->stop_force_time();
+            
             rectify_f(f);
             if(thermo->test_prev_step() || err)
             {
@@ -688,7 +692,10 @@ void Min_LBFGS::run()
             
             if(thermo->test_prev_step() || err)
             {
+                thermo->start_force_time();
                 forcefield->force_calc(1,energy_stress);
+                thermo->stop_force_time();
+                
                 rectify_f(f);
                 thermo->update(pe_idx,energy_stress[0]);
                 thermo->update(stress_idx,6,&energy_stress[1]);
@@ -696,7 +703,10 @@ void Min_LBFGS::run()
             }
             else
             {
+                thermo->start_force_time();
                 forcefield->force_calc(0,&curr_energy);
+                thermo->stop_force_time();
+                
                 rectify_f(f);
             }
             

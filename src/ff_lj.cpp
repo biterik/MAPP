@@ -24,6 +24,9 @@ using namespace MAPP_NS;
 ForceField_lj::
 ForceField_lj(MAPP* mapp) : ForceField(mapp)
 {
+    if(mapp->mode!=MD)
+        error->abort("this forcefield works only with md mode");
+    
     if(atoms->dimension!=3)
         error->abort("to use LJ potential, dimension of the box should be 3");
     arr_size=shift=0;
@@ -222,12 +225,12 @@ force_calc(int st_clc,TYPE0* en_st)
                         f[jcomp+2]-=ft*dx2;
                         if (st_clc)
                         {
-                            nrgy_strss[1]+=ft*dx0*dx0;
-                            nrgy_strss[2]+=ft*dx1*dx1;
-                            nrgy_strss[3]+=ft*dx2*dx2;
-                            nrgy_strss[4]+=ft*dx1*dx2;
-                            nrgy_strss[5]+=ft*dx2*dx0;
-                            nrgy_strss[6]+=ft*dx0*dx1;
+                            nrgy_strss[1]-=ft*dx0*dx0;
+                            nrgy_strss[2]-=ft*dx1*dx1;
+                            nrgy_strss[3]-=ft*dx2*dx2;
+                            nrgy_strss[4]-=ft*dx1*dx2;
+                            nrgy_strss[5]-=ft*dx2*dx0;
+                            nrgy_strss[6]-=ft*dx0*dx1;
                         }
                         
                     }
@@ -237,12 +240,12 @@ force_calc(int st_clc,TYPE0* en_st)
                         +offset[curs]*0.5;
                         if (st_clc)
                         {
-                            nrgy_strss[1]+=0.5*ft*dx0*dx0;
-                            nrgy_strss[2]+=0.5*ft*dx1*dx1;
-                            nrgy_strss[3]+=0.5*ft*dx2*dx2;
-                            nrgy_strss[4]+=0.5*ft*dx1*dx2;
-                            nrgy_strss[5]+=0.5*ft*dx2*dx0;
-                            nrgy_strss[6]+=0.5*ft*dx0*dx1;
+                            nrgy_strss[1]-=0.5*ft*dx0*dx0;
+                            nrgy_strss[2]-=0.5*ft*dx1*dx1;
+                            nrgy_strss[3]-=0.5*ft*dx2*dx2;
+                            nrgy_strss[4]-=0.5*ft*dx1*dx2;
+                            nrgy_strss[5]-=0.5*ft*dx2*dx0;
+                            nrgy_strss[6]-=0.5*ft*dx0*dx1;
                         }
                     }                    
                 }

@@ -64,9 +64,7 @@ CommandChangeBox::CommandChangeBox(MAPP* mapp
         }
         else
             error->abort("wrong command %s",args[iarg]);
-    }
-    
-    
+    }    
     
     if(strcmp(args[1],"strain")==0)
     {

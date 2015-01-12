@@ -17,6 +17,9 @@ enum{FCC,BCC,HCP,DIM,DIAMOND,B1,C11,L12,B2};
 ForceField_meam::
 ForceField_meam(MAPP* mapp):ForceField(mapp)
 {
+    if(mapp->mode!=MD)
+        error->abort("this forcefield works only with md mode");
+    
     max_pairs=0;
     int no_types=atom_types->no_types;
     
@@ -1988,21 +1991,21 @@ void ForceField_meam::force_calc
                             
                             if(jatm<atoms->natms)
                             {
-                                nrgy_strss[1]-=delij[0]*fi[0];
-                                nrgy_strss[2]-=delij[1]*fi[1];
-                                nrgy_strss[3]-=delij[2]*fi[2];
-                                nrgy_strss[4]-=0.5*(delij[1]*fi[2]+delij[2]*fi[1]);
-                                nrgy_strss[5]-=0.5*(delij[0]*fi[2]+delij[2]*fi[0]);
-                                nrgy_strss[6]-=0.5*(delij[0]*fi[1]+delij[1]*fi[0]);
+                                nrgy_strss[1]+=delij[0]*fi[0];
+                                nrgy_strss[2]+=delij[1]*fi[1];
+                                nrgy_strss[3]+=delij[2]*fi[2];
+                                nrgy_strss[4]+=0.5*(delij[1]*fi[2]+delij[2]*fi[1]);
+                                nrgy_strss[5]+=0.5*(delij[0]*fi[2]+delij[2]*fi[0]);
+                                nrgy_strss[6]+=0.5*(delij[0]*fi[1]+delij[1]*fi[0]);
                             }
                             else
                             {
-                                nrgy_strss[1]-=0.5*delij[0]*fi[0];
-                                nrgy_strss[2]-=0.5*delij[1]*fi[1];
-                                nrgy_strss[3]-=0.5*delij[2]*fi[2];
-                                nrgy_strss[4]-=0.25*(delij[1]*fi[2]+delij[2]*fi[1]);
-                                nrgy_strss[5]-=0.25*(delij[0]*fi[2]+delij[2]*fi[0]);
-                                nrgy_strss[6]-=0.25*(delij[0]*fi[1]+delij[1]*fi[0]);
+                                nrgy_strss[1]+=0.5*delij[0]*fi[0];
+                                nrgy_strss[2]+=0.5*delij[1]*fi[1];
+                                nrgy_strss[3]+=0.5*delij[2]*fi[2];
+                                nrgy_strss[4]+=0.25*(delij[1]*fi[2]+delij[2]*fi[1]);
+                                nrgy_strss[5]+=0.25*(delij[0]*fi[2]+delij[2]*fi[0]);
+                                nrgy_strss[6]+=0.25*(delij[0]*fi[1]+delij[1]*fi[0]);
                             }
                         }
                         
@@ -2098,13 +2101,13 @@ void ForceField_meam::force_calc
                                                     +delik[1]*fi[0]+deljk[1]*fj[0]);
                                                 
                                                 for(int i=0;i<6;i++)
-                                                    nrgy_strss[i+1]+=v[i];
+                                                    nrgy_strss[i+1]-=v[i];
                                                 if(jatm<atoms->natms)
                                                     for(int i=0;i<6;i++)
-                                                        nrgy_strss[i+1]+=v[i];
+                                                        nrgy_strss[i+1]-=v[i];
                                                 if(katm<atoms->natms)
                                                     for(int i=0;i<6;i++)
-                                                        nrgy_strss[i+1]+=v[i];
+                                                        nrgy_strss[i+1]-=v[i];
                                                 
                                             }
                                             

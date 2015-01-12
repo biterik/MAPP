@@ -362,19 +362,19 @@ namespace MAPP_NS {
 
             for(int i=0;i<no_vecs;i++)
                 if(!strcasecmp(name,vectors[i].name))
-                    error->abort("Duplicate vec name: %s",vectors[i].name);
+                    error->abort("duplicate atomic vector name %s",vectors[i].name);
             
             int type;
             
             if(no_vecs==0)
             {
                 if (strcmp(typeid(TYPE).name(),typeid(TYPE0).name())!=0)
-                    error->abort("wrong type, zeroth vector shoud be of type %s"
+                    error->abort("zeroth atomic vector shoud be of type %s"
                            ,typeid(TYPE0).name());
                 if (p!=1)
-                    error->abort("zeroth vector shoud be phantom");
+                    error->abort("zeroth atomic vector shoud be phantom");
                 if(d<dimension)
-                    error->abort("dimension of zeroth vector should "
+                    error->abort("dimension of zeroth atomic vector should "
                            "be more or equal to box dimension");
             }
             
@@ -406,7 +406,7 @@ namespace MAPP_NS {
                 type=12;
             else
             {
-                error->abort("the requested vector type is not provided");
+                error->abort("the requested atomic vector type is not provided");
                 type=-1;
             }
             AVec* new_vectors;
@@ -441,134 +441,7 @@ namespace MAPP_NS {
         }
         
         void gather_all(VecLst*);
-        /*
-        template <typename TYPE>
-        void ret(TYPE*& x,int ivec)
-        {
-            if(ivec>=no_vecs)
-                error->abort("inconsistent type and vector number");
-            
-            if(vectors[ivec].type==0)
-            {
-                if(strcmp(typeid(TYPE).name(),typeid(char).name())==0)
-                {
-                    x=vectors[ivec].vec_0;
-                }
-                else
-                    error->abort("inconsistent type and vector number");
-            }
-            else if(vectors[ivec].type==1)
-            {
-                if(strcmp(typeid(TYPE).name(),typeid(unsigned char).name())==0)
-                {
-                    x=vectors[ivec].vec_1;
-                }
-                else
-                    error->abort("inconsistent type and vector number");
-            }
-            else if(vectors[ivec].type==2)
-            {
-                if(strcmp(typeid(TYPE).name(),typeid(short int).name())==0)
-                {
-                    x=vectors[ivec].vec_2;
-                }
-                else
-                    error->abort("inconsistent type and vector number");
-            }
-            else if(vectors[ivec].type==3)
-            {
-                if(strcmp(typeid(TYPE).name(),typeid(unsigned short int).name())==0)
-                {
-                    x=vectors[ivec].vec_3;
-                }
-                else
-                    error->abort("inconsistent type and vector number");
-            }
-            else if(vectors[ivec].type==4)
-            {
-                if(strcmp(typeid(TYPE).name(),typeid(int).name())==0)
-                {
-                    x=vectors[ivec].vec_4;
-                }
-                else
-                    error->abort("inconsistent type and vector number");
-            }
-            else if(vectors[ivec].type==5)
-            {
-                if(strcmp(typeid(TYPE).name(),typeid(unsigned int).name())==0)
-                {
-                    x=vectors[ivec].vec_5;
-                }
-                else
-                    error->abort("inconsistent type and vector number");
-            }
-            else if(vectors[ivec].type==6)
-            {
-                if(strcmp(typeid(TYPE).name(),typeid(long int).name())==0)
-                {
-                    x=vectors[ivec].vec_6;
-                }
-                else
-                    error->abort("inconsistent type and vector number");
-            }
-            else if(vectors[ivec].type==7)
-            {
-                if(strcmp(typeid(TYPE).name(),typeid(unsigned long int).name())==0)
-                {
-                    x=vectors[ivec].vec_7;
-                }
-                else
-                    error->abort("inconsistent type and vector number");
-            }
-            else if(vectors[ivec].type==8)
-            {
-                if(strcmp(typeid(TYPE).name(),typeid(long long int).name())==0)
-                {
-                    x=vectors[ivec].vec_8;
-                }
-                else
-                    error->abort("inconsistent type and vector number");
-            }
-            else if(vectors[ivec].type==9)
-            {
-                if(strcmp(typeid(TYPE).name(),typeid(unsigned long long int).name())==0)
-                {
-                    x=vectors[ivec].vec_9;
-                }
-                else
-                    error->abort("inconsistent type and vector number");
-            }
-            else if(vectors[ivec].type==10)
-            {
-                if(strcmp(typeid(TYPE).name(),typeid(float).name())==0)
-                {
-                    x=vectors[ivec].vec_10;
-                }
-                else
-                    error->abort("inconsistent type and vector number");
-            }
-            else if(vectors[ivec].type==11)
-            {
-                if(strcmp(typeid(TYPE).name(),typeid(double).name())==0)
-                {
-                    x=vectors[ivec].vec_11;
-                }
-                else
-                    error->abort("inconsistent type and vector number");
-            }
-            else if(vectors[ivec].type==12)
-            {
-                if(strcmp(typeid(TYPE).name(),typeid(long double).name())==0)
-                {
-                    x=vectors[ivec].vec_12;
-                }
-                else
-                    error->abort("inconsistent type and vector number");
-            }
-            else
-                error->abort("the requested vector type is not provided");
-            
-        }*/
+
         
     };
 /*--------------------------------------------

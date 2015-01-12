@@ -23,7 +23,7 @@
 #include "command_styles.h"
 #include <cmath>
 #include <stdio.h>
-#define MAPP_VERSION "2.0.0"
+#define MAPP_VERSION "beta"
 using namespace MAPP_NS;
 using namespace std;
 /*--------------------------------------------
@@ -100,6 +100,7 @@ MAPP(int narg,char** args,MPI_Comm communicator)
     
     
     //test();
+
     
 }
 /*--------------------------------------------
@@ -127,7 +128,7 @@ MAPP::~MAPP()
  --------------------------------------------*/
 void MAPP::read_file()
 {
-
+    no_commands=0;
     int input_file_chk=1;
     char* line;
     CREATE1D(line,MAXCHAR);
@@ -156,6 +157,9 @@ void MAPP::command(char* command)
     char** args;
     int narg;
     narg=parse_line(command,args);
+    
+    if(narg)
+        no_commands++;
     
     if(narg==0)
     {
@@ -419,7 +423,10 @@ void MAPP::command_style(int narg,char** args)
  differnt command styles
  --------------------------------------------*/
 void MAPP::change_mode(int narg,char** args)
-{    
+{
+    if(no_commands!=1)
+        error->abort("mode command should be the first command");
+        
     if(narg!=2)
         error->abort("wrong command: %s",args[0]);
     int new_mode;

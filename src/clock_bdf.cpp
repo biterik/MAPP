@@ -11,7 +11,7 @@ using namespace MAPP_NS;
 Clock_BDF::Clock_BDF(MAPP* mapp,int narg
 ,char** arg):Clock(mapp)
 {
-    min_gamma=1.0e-30;
+    min_gamma=1.0e-10;
     gamma_red=0.8;
     slope=0.4;
     max_iter=50;
@@ -43,7 +43,7 @@ Clock_BDF::Clock_BDF(MAPP* mapp,int narg
                 min_gamma=atof(arg[iarg]);
                 iarg++;
             }
-            else if(strcmp(arg[iarg],"gamma_red")==0)
+            else if(strcmp(arg[iarg],"red_gamma")==0)
             {
                 iarg++;
                 gamma_red=atof(arg[iarg]);
@@ -494,7 +494,7 @@ void Clock_BDF::run()
     int ord=1;
     int chk;
     int const_stp=0;
-    int initial_phase=1;
+    int initial_phase=0;
     
     eq_ratio=1.0;
     
@@ -502,7 +502,6 @@ void Clock_BDF::run()
     while (eq_ratio>=1.0 && istep <no_steps)
     {
         chk=interpolate(del_t,ord);
-        
         while(chk==-1)
         {
             if(initial_phase) initial_phase=0;
@@ -510,8 +509,8 @@ void Clock_BDF::run()
             del_t=MAX(del_t,min_del_t);
             chk=interpolate(del_t,ord);
         }
-        
         cost=solve(del_t,ord);
+        //cost=0.0;
         while(err>=1.0 || cost>=1.0)
         {
             if(initial_phase) initial_phase=0;
@@ -540,8 +539,8 @@ void Clock_BDF::run()
             }
             
             cost=solve(del_t,ord);
+            //cost=0.0;
         }
-        
         if(write!=NULL)
             write->write();
         thermo->thermo_print();
@@ -555,6 +554,23 @@ void Clock_BDF::run()
             thermo->update(stress_idx,6,&energy_stress[1]);
             thermo->update(time_idx,t[0]+del_t);
         }
+        
+        
+        
+        tmp_y=y[max_order-1];
+        for(int i=max_order-1;i>0;i--)
+        {
+            t[i]=t[i-1];
+            y[i]=y[i-1];
+        }
+        
+        y[0]=tmp_y;
+        t[0]+=del_t;
+        
+        memcpy(y[0],c,dof_lcl*sizeof(TYPE0));
+        memcpy(dy,c_d,dof_lcl*sizeof(TYPE0));
+        
+        
         
         
         
@@ -639,9 +655,6 @@ void Clock_BDF::run()
         }
         
         
-        ratio=pow(0.5/err,1.0/static_cast<TYPE0>(ord+1));
-        
-        
         del_t_tmp=ratio*del_t;
         if(del_t_tmp>max_del_t)
             del_t=max_del_t;
@@ -650,21 +663,7 @@ void Clock_BDF::run()
         else
             del_t=del_t_tmp;
         
-        
-        
-        tmp_y=y[max_order-1];
-        for(int i=max_order-1;i>0;i--)
-        {
-            t[i]=t[i-1];
-            y[i]=y[i-1];
-        }
-        
-        y[0]=tmp_y;
-        t[0]+=del_t;
-        
-        memcpy(y[0],c,dof_lcl*sizeof(TYPE0));
-        memcpy(dy,c_d,dof_lcl*sizeof(TYPE0));
-        
+
         step_no++;
         istep++;
     }
@@ -690,10 +689,15 @@ TYPE0 Clock_BDF::solve(TYPE0 del_t,int q)
     TYPE0 curr_cost,ideal_cost,cost;
     int chk;
     
+
     /*
     memcpy(c,y_0,dof_lcl*sizeof(TYPE0));
+    thermo->start_comm_time();
     atoms->update(c_n);
+    thermo->stop_comm_time();
     */
+   
+    
     TYPE0 tot_ratio;
     ratio=1.0;
     for(int i=0;i<dof_lcl;i++)
@@ -707,13 +711,15 @@ TYPE0 Clock_BDF::solve(TYPE0 del_t,int q)
     MPI_Allreduce(&ratio,&tot_ratio,1,MPI_TYPE0,MPI_MIN,world);
     for(int i=0;i<dof_lcl;i++)
         c[i]=y[0][i]+dy[i]*del_t*tot_ratio;
-    
+
     thermo->start_comm_time();
     atoms->update(c_n);
     thermo->stop_comm_time();
     
+    
+    
     thermo->start_force_time();
-    curr_cost=forcefield->calc_g(1,beta,a,g);
+    curr_cost=forcefield->calc_g(0,beta,a,g);
     rectify(g);
     thermo->stop_force_time();
     memcpy(h,g,dof_lcl*sizeof(TYPE0));
@@ -731,7 +737,6 @@ TYPE0 Clock_BDF::solve(TYPE0 del_t,int q)
     while(curr_cost>m_tol*static_cast<TYPE0>(dof_tot)
           && iter<max_iter && max_gamma>min_gamma)
     {
-        
         memcpy(g0,g,dof_lcl*sizeof(TYPE0));
         memcpy(c0,c,dof_lcl*sizeof(TYPE0));
         
@@ -766,7 +771,7 @@ TYPE0 Clock_BDF::solve(TYPE0 del_t,int q)
             thermo->stop_comm_time();
             
             thermo->start_force_time();
-            curr_cost=forcefield->calc_g(1,beta,a,g);
+            curr_cost=forcefield->calc_g(0,beta,a,g);
             rectify(g);
             thermo->stop_force_time();
 
@@ -783,7 +788,7 @@ TYPE0 Clock_BDF::solve(TYPE0 del_t,int q)
                 thermo->stop_comm_time();
                 
                 thermo->start_force_time();
-                curr_cost=forcefield->calc_g(0,beta,a,g);
+                curr_cost=forcefield->calc_g(1,beta,a,g);
                 thermo->stop_force_time();
             }
         }
@@ -862,9 +867,9 @@ TYPE0 Clock_BDF::solve(TYPE0 del_t,int q)
     MPI_Allreduce(&tmp1,&eq_ratio,1,MPI_TYPE0,MPI_SUM,world);
     eq_ratio=sqrt(eq_ratio/static_cast<TYPE0>(dof_tot))/e_tol;
     
-    
+    err=sqrt(err/(static_cast<TYPE0>(dof_tot)*a_tol));
     err*=fabs(err_pre_fac);
-    err=sqrt(err/(a_tol*static_cast<TYPE0>(dof_tot)));
+
     
     
     for(int i=0;i<dof_lcl;i++)

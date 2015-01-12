@@ -38,6 +38,7 @@ namespace MAPP_NS {
         class MD* md;
         class Min* min;
         
+        int no_commands;
         
         void read_file();
         void command(char*);

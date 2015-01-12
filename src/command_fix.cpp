@@ -26,13 +26,14 @@ CommandFix::~CommandFix()
  --------------------------------------------*/
 void CommandFix::md(int narg,char** args)
 {
-    int dof_n;
+    int dof_n,iarg;
     int x_dim=atoms->vectors[0].dim;
     char* dof_ch;
     CREATE1D(dof_ch,x_dim);
     memset(dof_ch,0,x_dim);
     
     int id_n;
+
     if(strcmp(args[1],"release")==0)
     {
         if(narg!=2)
@@ -43,30 +44,28 @@ void CommandFix::md(int narg,char** args)
             atoms->del(dof_n);
         return;
     }
-    else if(strcmp(args[1],"x")==0)
-        dof_ch[0]=1;
-    else if(strcmp(args[1],"y")==0)
-        dof_ch[1]=1;
-    else if(strcmp(args[1],"z")==0)
-        dof_ch[2]=1;
-    else if(strcmp(args[1],"xy")==0 ||
-            strcmp(args[1],"yx")==0)
-        dof_ch[0]=dof_ch[1]=1;
-    else if(strcmp(args[1],"yz")==0 ||
-            strcmp(args[1],"zy")==0)
-        dof_ch[2]=dof_ch[3]=1;
-    else if(strcmp(args[1],"zx")==0 ||
-            strcmp(args[1],"xz")==0)
-        dof_ch[2]=dof_ch[0]=1;
-    else if(strcmp(args[1],"xyz")==0 ||
-            strcmp(args[1],"xzy")==0 ||
-            strcmp(args[1],"yzx")==0 ||
-            strcmp(args[1],"yxz")==0 ||
-            strcmp(args[1],"zxy")==0 ||
-            strcmp(args[1],"zyx")==0)
-        dof_ch[0]=dof_ch[1]=dof_ch[2]=1;
-    else
+    
+    
+    int files_started=0;
+    iarg=1;
+    while(iarg<narg && files_started==0)
+    {
+        if(strcmp(args[iarg],"x")==0)
+            dof_ch[0]=1;
+        else if(strcmp(args[iarg],"y")==0)
+            dof_ch[1]=1;
+        else if(strcmp(args[iarg],"z")==0)
+            dof_ch[2]=1;
+        else
+            files_started=1;
+        iarg++;
+    }
+    iarg--;
+    
+    if(iarg>=narg)
         error->abort("incorrect fix command");
+    
+    
     
     FILE* fp=NULL;
     char* line;
@@ -76,7 +75,7 @@ void CommandFix::md(int narg,char** args)
     int* list=NULL;
     int list_size=0;
     
-    for(int iarg=2;iarg<narg;iarg++)
+    while (iarg<narg)
     {
         if(atoms->my_p_no==0)
         {
@@ -105,6 +104,8 @@ void CommandFix::md(int narg,char** args)
         MPI_Bcast(&list[list_size],no_atoms,MPI_INT,0,world);
         
         list_size+=no_atoms;
+        
+        iarg++;
     }
     delete [] line;
     
@@ -183,22 +184,6 @@ void CommandFix::dmd(int narg,char** args)
             dof_ch[1]=1;
         else if(strcmp(args[iarg],"z")==0)
             dof_ch[2]=1;
-        else if(strcmp(args[iarg],"xy")==0 ||
-                strcmp(args[iarg],"yx")==0)
-            dof_ch[0]=dof_ch[1]=1;
-        else if(strcmp(args[iarg],"yz")==0 ||
-                strcmp(args[iarg],"zy")==0)
-            dof_ch[2]=dof_ch[3]=1;
-        else if(strcmp(args[iarg],"zx")==0 ||
-                strcmp(args[iarg],"xz")==0)
-            dof_ch[2]=dof_ch[0]=1;
-        else if(strcmp(args[iarg],"xyz")==0 ||
-                strcmp(args[iarg],"xzy")==0 ||
-                strcmp(args[iarg],"yzx")==0 ||
-                strcmp(args[iarg],"yxz")==0 ||
-                strcmp(args[iarg],"zxy")==0 ||
-                strcmp(args[iarg],"zyx")==0)
-            dof_ch[0]=dof_ch[1]=dof_ch[2]=1;
         else if(sscanf(args[iarg],"c[%d]",&c_comp)==1)
         {
             if(c_comp>=no_types || c_comp<0)

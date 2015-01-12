@@ -46,7 +46,7 @@ Clock_MBDF::Clock_MBDF(MAPP* mapp,int narg
                 min_gamma=atof(arg[iarg]);
                 iarg++;
             }
-            else if(strcmp(arg[iarg],"gamma_red")==0)
+            else if(strcmp(arg[iarg],"red_gamma")==0)
             {
                 iarg++;
                 gamma_red=atof(arg[iarg]);
@@ -487,115 +487,7 @@ void Clock_MBDF::run()
         istep++;
     }
     
-    /*
-    for(int istep=0;istep<no_steps;istep++)
-    {
-        
-        chk=interpolate(del_t,ord);
-        
-        while(chk==-1)
-        {
-            if(initial_phase) initial_phase=0;
-            del_t*=0.8;
-            del_t=MAX(del_t,min_del_t);
-            chk=interpolate(del_t,ord);
-        }
-        
-        cost=solve(del_t,ord);
-        while(err>=1.0 || cost>=1.0)
-        {
-            if(initial_phase) initial_phase=0;
-            err1=MAX(err,cost);
-            ratio=pow(0.5/err1,1.0/static_cast<TYPE0>(ord+1));
-            
-            if(ratio<0.5)
-                ratio=0.5;
-            else if(ratio>0.9)
-                ratio=0.9;
-            
-            del_t_tmp=del_t*ratio;
-            if(del_t_tmp<min_del_t)
-                del_t=min_del_t;
-            else
-                del_t=del_t_tmp;
-            
-            
-            chk=interpolate(del_t,ord);
-            
-            while(chk==-1)
-            {
-                del_t*=0.8;
-                del_t=MAX(del_t,min_del_t);
-                chk=interpolate(del_t,ord);
-            }
-            
-            cost=solve(del_t,ord);
-            
-        }
-        
-        
-        tmp_y=y[max_order+1];
-        for(int i=max_order+1;i>0;i--)
-        {
-            t[i]=t[i-1];
-            y[i]=y[i-1];
-        }
-        
-        y[0]=tmp_y;
-        t[0]+=del_t;
-        
-        memcpy(y[0],c,dof_lcl*sizeof(TYPE0));
-        memcpy(dy,c_d,dof_lcl*sizeof(TYPE0));
-        
-        if(write!=NULL)
-            write->write();
-        thermo->thermo_print();
-        
-        if(thermo->test_prev_step())
-        {
-            forcefield->force_calc(1,energy_stress);
-            thermo->update(fe_idx,energy_stress[0]);
-            thermo->update(stress_idx,6,&energy_stress[1]);
-            thermo->update(time_idx,t[0]);
-        }
-        
-        if(initial_phase)
-        {
-            del_t=MIN(del_t*2.0,max_del_t);
-            if(ord<max_order)
-                ord++;
-        }
-        else
-        {
-            del_ord=err_calc(ord,const_stps,del_t,err);
-            
-            ord+=del_ord;
-            
-            if(del_ord==0)
-                ord_const_stps++;
-            else
-                ord_const_stps=0;
-            
-            ratio=step_size(del_t,ord);
-            
-            if(del_ord==0)
-            {
-                if(ratio==1.0)
-                    const_stps++;
-                else
-                    const_stps=0;
-            }
-            else
-                const_stps=0;
-            
-            
-            del_t*=ratio;
-            
-        }
-        
-        step_no++;
-    }
-    */
+
     delete [] energy_stress;
 }
 /*--------------------------------------------
@@ -614,8 +506,15 @@ TYPE0 Clock_MBDF::solve(TYPE0 del_t,int ord)
     TYPE0 g0_g0,g_g,g_g0,g_h;
     TYPE0 curr_cost,ideal_cost,cost;
     int chk;
-    TYPE0 tot_ratio;
     
+    /*
+    memcpy(c,y_0,dof_lcl*sizeof(TYPE0));
+    thermo->start_comm_time();
+    atoms->update(c_n);
+    thermo->stop_comm_time();
+    */
+    
+    TYPE0 tot_ratio;
     ratio=1.0;
     for(int i=0;i<dof_lcl;i++)
     {
@@ -634,7 +533,7 @@ TYPE0 Clock_MBDF::solve(TYPE0 del_t,int ord)
     thermo->stop_comm_time();
     
     thermo->start_force_time();
-    curr_cost=forcefield->calc_g(1,beta,a,g);
+    curr_cost=forcefield->calc_g(0,beta,a,g);
     rectify(g);
     thermo->stop_force_time();
     
@@ -686,7 +585,7 @@ TYPE0 Clock_MBDF::solve(TYPE0 del_t,int ord)
             thermo->stop_comm_time();
             
             thermo->start_force_time();
-            curr_cost=forcefield->calc_g(1,beta,a,g);
+            curr_cost=forcefield->calc_g(0,beta,a,g);
             rectify(g);
             thermo->stop_force_time();
             
@@ -703,7 +602,7 @@ TYPE0 Clock_MBDF::solve(TYPE0 del_t,int ord)
                 thermo->stop_comm_time();
                 
                 thermo->start_force_time();
-                curr_cost=forcefield->calc_g(0,beta,a,g);
+                curr_cost=forcefield->calc_g(1,beta,a,g);
                 thermo->stop_force_time();
             }
         }

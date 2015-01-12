@@ -19,7 +19,6 @@ namespace MAPP_NS {
         TYPE0 eq_ratio;
         
         
-        
         TYPE0* y_0;
         
         // stuff for solution

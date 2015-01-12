@@ -1,6 +1,7 @@
 #include "line_search.h"
 #include "ff.h"
 #include "atom_types.h"
+#include "thermo_dynamics.h"
 using namespace std;
 using namespace MAPP_NS;
 /*--------------------------------------------
@@ -113,6 +114,7 @@ void LineSearch::normalize_h_s()
  --------------------------------------------*/
 TYPE0 LineSearch::energy(TYPE0 alpha)
 {
+    TYPE0 energy;
     TYPE0* x;
     TYPE0* x_prev;
     TYPE0* h;
@@ -164,10 +166,16 @@ TYPE0 LineSearch::energy(TYPE0 alpha)
         if(dof_n>-1)
             for(int i=0;i<(atoms->natms)*x_dim;i++)
                 if(dof[i]==1) x[i]=x_prev[i];
-        
+
+        thermo->start_comm_time();
         atoms->update_0(1,1,vecs_comm);
+        thermo->stop_comm_time();
         
-        return forcefield->energy_calc();
+        thermo->start_force_time();
+        energy=forcefield->energy_calc();
+        thermo->stop_force_time();
+        
+        return energy;
     }
     else
     {
@@ -175,9 +183,15 @@ TYPE0 LineSearch::energy(TYPE0 alpha)
         for(int i=0;i<x_dim*atoms->natms;i++)
             x[i]=x_prev[i]+alpha*h[i];
         
+        thermo->start_comm_time();
         atoms->update_0(0,1,vecs_comm);
+        thermo->stop_comm_time();
         
-        return forcefield->energy_calc();
+        thermo->start_force_time();
+        energy=forcefield->energy_calc();
+        thermo->stop_force_time();
+        
+        return energy;
     }
 }
 /*--------------------------------------------
@@ -221,7 +235,7 @@ int LineSearch_BackTrack::line_min(TYPE0& nrgy,TYPE0& alph)
     if(mapp->mode==DMD)
     {
         atoms->vectors[0].ret(x);
-        min_h=99999999999999;
+        min_h=INFINITY;
         for(int i=0;i<atoms->natms;i++)
             for(int j=0;j<atom_types->no_types;j++)
                 min_h=MIN(min_h,x[i*(3+atom_types->no_types)+3+j]);

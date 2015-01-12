@@ -41,7 +41,6 @@ CommandDisplace::CommandDisplace(MAPP* mapp
             fgets(line,MAXCHAR,fp);
             sscanf(line,"%d",&no_atoms);
             
-            
         }
         
         MPI_Bcast(&no_atoms,1,MPI_INT,0,world);
@@ -107,7 +106,7 @@ CommandDisplace::~CommandDisplace()
     
 }
 /*--------------------------------------------
- destructor
+ move
  --------------------------------------------*/
 void CommandDisplace::move(int* list,
 int no_atoms,TYPE0* disp)

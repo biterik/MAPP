@@ -118,6 +118,8 @@ void Min_CG::init()
 
     line_search=new LineSearch_BackTrack(mapp,vecs_comm);
     line_search->h_n=h_n;
+    line_search->thermo=thermo;
+    
     
     for(int i=0;i<dim;i++)
         for(int j=0;j<dim;j++)
@@ -154,6 +156,7 @@ void Min_CG::init()
             f[i]=0.0;
         
         forcefield->force_calc(1,energy_stress);
+        
         rectify_f(f);
         curr_energy=energy_stress[0];
         thermo->update(pe_idx,energy_stress[0]);
@@ -204,6 +207,7 @@ void Min_CG::init()
             f[i]=0.0;
         
         forcefield->force_calc(1,energy_stress);
+        
         rectify_f(f);
         curr_energy=energy_stress[0];
         thermo->update(pe_idx,energy_stress[0]);
@@ -242,7 +246,7 @@ void Min_CG::run()
     TYPE0** B;
     err=LS_S;
     TYPE0* energy_stress;
-    CREATE1D(energy_stress,dim*(dim+1)/2+1);
+    CREATE1D(energy_stress,dim*(dim+1)/2+1);   
     
     if(chng_box)
     {
@@ -313,7 +317,10 @@ void Min_CG::run()
             for(int i=0;i<x_dim*atoms->natms;i++)
                 f[i]=0.0;
             
+            thermo->start_force_time();
             forcefield->force_calc(1,energy_stress);
+            thermo->stop_force_time();
+            
             rectify_f(f);
             if(thermo->test_prev_step() || err)
             {
@@ -497,7 +504,10 @@ void Min_CG::run()
             
             if(thermo->test_prev_step() || err)
             {
+                thermo->start_force_time();
                 forcefield->force_calc(1,energy_stress);
+                thermo->stop_force_time();
+                
                 rectify_f(f);
                 thermo->update(pe_idx,energy_stress[0]);
                 thermo->update(stress_idx,6,&energy_stress[1]);
@@ -505,7 +515,10 @@ void Min_CG::run()
             }
             else
             {
+                thermo->start_force_time();
                 forcefield->force_calc(0,&curr_energy);
+                thermo->stop_force_time();
+                
                 rectify_f(f);
             }
 

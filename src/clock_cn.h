@@ -11,29 +11,35 @@ namespace MAPP_NS {
     {
     private:
     protected:
-        TYPE0 min_del_t;
-        TYPE0 alpha;
-        TYPE0 delta_t;
+        int c_n,c_d_n,dof_tot,dof_lcl;
+        int max_iter,no_steps;
+        TYPE0 min_gamma,gamma_red,slope;
+        TYPE0 m_tol,a_tol,e_tol;
+        TYPE0 min_del_t,max_del_t,initial_del_t;
+        TYPE0 eq_ratio;
+
+        TYPE0 beta;
+        TYPE0 err;
+        
         VecLst* vecs_comm;
+        
+        TYPE0* t;
+        
+        TYPE0** dy;
+        
         TYPE0* y_0;
+        TYPE0* y0;
+        TYPE0* dy0;
         TYPE0* a;
         TYPE0* g;
         TYPE0* c0;
         TYPE0* g0;
         TYPE0* h;
-        int c_n,c_d_n;
-        int tot_dim,tot_dof;
-        void line_search();
-        TYPE0 gamma_red,slope;
-        int no_steps;
+
+        TYPE0 solve(TYPE0);
+        int interpolate(TYPE0);
         
-        TYPE0 tot_time;
-        TYPE0 RTOL,ATOL,min_gamma;
-        int MAX_ITER;
-        TYPE0 solve();
-        TYPE0 step_size();
-        TYPE0 delta_c;
-        void prepare();
+        
     public:
         Clock_CN(MAPP *,int,char**);
         ~Clock_CN();

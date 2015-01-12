@@ -1397,7 +1397,7 @@ int Atoms::find(const char* name)
         if(strcmp(vectors[i].name,name)==0)
             return i;
     
-    error->abort("no such name: %s!!!",name);
+    error->abort("cannot find atomic vector %s",name);
     
     return -1;
 }
@@ -1780,6 +1780,7 @@ void Atoms::store_0()
 void Atoms::update_0(int box_change,int neigh_chk
 ,class VecLst* list)
 {
+    
     //TYPE0* x=(TYPE0*)vectors[0].ret_vec();
     TYPE0* x;
     vectors[0].ret(x);
@@ -2022,7 +2023,7 @@ void Atoms::hard_auto_grid_proc(TYPE0 f)
     
     if(f<=0 || f>1)
         error->abort("inter-node efficiency "
-                     "should be between 0.0 and 1.0");
+        "should be between 0.0 and 1.0");
     
     int eq_p_per_n=1;
     for(int i=0;i<tot_n;i++)
@@ -2907,7 +2908,7 @@ void Atoms::invert_lower_triangle(TYPE0** A,TYPE0** Ainv,int dim)
 void Atoms::add_skin(int narg,char** args)
 {
     if(narg!=2)
-        error->abort("wrong command");
+        error->abort("wrong number of inputs for skin command");
     TYPE0 s=atof(args[1]);
     if(s<=0.0)
         error->abort("skin cannot be equal or less than zero");
@@ -2946,8 +2947,7 @@ VecLst::VecLst(MAPP* mapp,int no_args,...)
         for(int j=i+1;j<no_vecs;j++)
         {
             if(vec_list[i]==vec_list[j])
-                error->abort("Error: in vector_list two "
-                "vectors with the same index cannot exist\n");
+                error->abort("duplicate atomic vecotr index in vector list");
             
             if(vec_list[i]>vec_list[j])
             {
@@ -2999,8 +2999,7 @@ VecLst::VecLst(MAPP* mapp,int* list,int no)
         for(int j=i+1;j<no_vecs;j++)
         {
             if(vec_list[i]==vec_list[j])
-                error->abort("Error: in vector_list two "
-                             "vectors with the same index cannot exist\n");
+                error->abort("duplicate atomic vecotr index in vector list");
             
             if(vec_list[i]>vec_list[j])
             {
@@ -3057,13 +3056,13 @@ void VecLst::add_update(int vec_no)
             chk=1;
     
     if(chk==0)
-        error->abort("update vector should "
+        error->abort("update atomic vector should "
         "be of phantom kind");
     
     
     for(int i=0;i<update_every_ph_no_vecs;i++)
         if(update_every_ph_vec_list[i]==vec_no)
-            error->abort("duplicate update vector");
+            error->abort("duplicate update atomic vector");
     
     
     GROW(update_every_ph_vec_list
@@ -3079,8 +3078,7 @@ void VecLst::add_update(int vec_no)
         for(int j=i+1;j<update_every_ph_no_vecs;j++)
         {
             if(update_every_ph_vec_list[i]==update_every_ph_vec_list[j])
-                error->abort("Error: in vector_list two "
-                "vectors with the same index cannot exist\n");
+                error->abort("duplicate atomic vecotr index in vector list");
             
             if(update_every_ph_vec_list[i]>update_every_ph_vec_list[j])
             {
@@ -3104,7 +3102,7 @@ void VecLst::del_update(int vec_no)
             chk=1;
     
     if(chk==0)
-        error->abort("update vector not found");
+        error->abort("update atomic vector not found %i",vec_no);
 
     int* vec_tmp;
     CREATE1D(vec_tmp,update_every_ph_no_vecs-1);
