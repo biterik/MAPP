@@ -13,6 +13,7 @@ namespace MAPP_NS
     class ForceField_eam : public ForceField
     {
     private:
+        int no_types;
     protected:
         TYPE0*** F_arr;
         TYPE0*** phi_r_arr;

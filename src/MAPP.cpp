@@ -433,10 +433,14 @@ void MAPP::change_mode(int narg,char** args)
     if(strcmp(args[1],"md")==0)
     {
         new_mode=MD;
+        if(atoms->my_p_no==0)
+            printf("mode set to md\n");
     }
     else if(strcmp(args[1],"dmd")==0)
     {
         new_mode=DMD;
+        if(atoms->my_p_no==0)
+            printf("mode set to dmd\n");
     }
     else
         error->abort("unknown mode: %s",args[1]);
@@ -444,69 +448,7 @@ void MAPP::change_mode(int narg,char** args)
         return;
     mode=new_mode;
     
-    /*
-    int x_d_n;
-    int f_n;
-    if(new_mode==DMD && mode==MD)
-    {
-        x_d_n=atoms->find_exist("x_d");
-        if(x_d_n>=0)
-        {
-            if(atoms->my_p_no==0)
-                fprintf(output,"chnaging the mode to dmd,"
-                "all the velocity values will be lost\n");
-            atoms->del(x_d_n);
-        }
-        atoms->vectors[0].change_dimension(3+atom_types->no_types);
-        TYPE0* x;
-        atoms->vectors[0].ret(x);
-        for(int i=0;i<atoms->natms;i++)
-            x[4*i+3]=0.0;
-        
-        f_n=atoms->find_exist("f");
-        if(f_n>=0)
-        {
-            atoms->vectors[f_n].change_dimension(4);
-            TYPE0* f;
-            atoms->vectors[f_n].ret(f);
-        }
-        else
-        {
-            atoms->add<TYPE0>(0,4,"f");
-        }
-    }
-    else if(new_mode==MD && mode==DMD)
-    {
-        if(atoms->my_p_no==0)
-            fprintf(output,"chnaging the mode to dmd,"
-            "all the alpha values will be lost\n");
-        atoms->vectors[0].change_dimension(3);
-        atoms->vectors[atoms->find("f")].change_dimension(3);
-    }
-    
-    mode=new_mode;
- 
-    
-    
-    
-    
-    
-    if(new_mode==VG && mode==MD)
-    {
-        if(atoms->my_p_no==0)
-            fprintf(output,"chnaging the mode from md to vg,"
-            "all the velocity values will be lost\n");
-    }
-    else if(new_mode==MD && mode==VG)
-    {
-        if(atoms->my_p_no==0)
-            fprintf(output,"chnaging the mode from vg to md,"
-            "all the alpha values will be lost\n");
-        atoms->vectors[0].change_dimension(3);
-        atoms->vectors[atoms->find("f")].change_dimension(3);
-        atoms->add<TYPE0>(0,4,"f");
-    }
-     */
+
 }
 /*--------------------------------------------
  parse a command line:

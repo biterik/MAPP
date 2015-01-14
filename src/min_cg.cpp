@@ -162,12 +162,12 @@ void Min_CG::init()
         thermo->update(pe_idx,energy_stress[0]);
         thermo->update(stress_idx,6,&energy_stress[1]);
         
-        stress[0][0]=energy_stress[1];
-        stress[1][1]=energy_stress[2];
-        stress[2][2]=energy_stress[3];
-        stress[1][2]=stress[2][1]=energy_stress[4];
-        stress[0][2]=stress[2][0]=energy_stress[5];
-        stress[0][1]=stress[1][0]=energy_stress[6];
+        stress[0][0]=-energy_stress[1];
+        stress[1][1]=-energy_stress[2];
+        stress[2][2]=-energy_stress[3];
+        stress[1][2]=stress[2][1]=-energy_stress[4];
+        stress[0][2]=stress[2][0]=-energy_stress[5];
+        stress[0][1]=stress[1][0]=-energy_stress[6];
         
         for(int i=0;i<dim;i++)
         {

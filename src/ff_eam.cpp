@@ -14,6 +14,8 @@ ForceField_eam(MAPP* mapp) : ForceField(mapp)
 {
     if(mapp->mode!=MD)
         error->abort("this forcefield works only with md mode");
+
+    no_types=atom_types->no_types;
     
     allocated=0;
     eam_mode=NOT_SET;
@@ -404,7 +406,7 @@ void ForceField_eam::coef(int narg,char** arg)
     if(strcmp(arg[1],"FS")==0)
     {
         eam_mode=FINNIS_FL;
-        set_funcfl(narg-2,&arg[2]);
+        set_fs(narg-2,&arg[2]);
     }
     else if(strcmp(arg[1],"SetFL")==0)
     {
@@ -421,7 +423,6 @@ void ForceField_eam::coef(int narg,char** arg)
             "for eam Force Field");
     cut_sq=(nr-1.0)*(nr-1.0)*dr*dr;
     rho_max=(nrho-1.0)*drho;
-
     
     set_arrays();
 
@@ -429,13 +430,12 @@ void ForceField_eam::coef(int narg,char** arg)
 /*--------------------------------------------
  read setfiles
  --------------------------------------------*/
-void ForceField_eam::set_setfl(int no_files
+void ForceField_eam::set_funcfl(int no_files
 ,char** file_names)
 {
-    int no_types=atom_types->no_types;
     if(no_files!=no_types)
         error->abort("no of types and number "
-                     "of files should be equal in eam");
+        "of files should be equal in eam");
     
     TYPE0* drs;
     TYPE0* drhos;
@@ -452,14 +452,13 @@ void ForceField_eam::set_setfl(int no_files
     CREATE1D(tmp_F,no_types);
     CREATE1D(tmp_rho,no_types);
     CREATE1D(tmp_zi,no_types);
+    TYPE0* tmp;
     
     FILE* fp=NULL;
     char* line;
     CREATE1D(line,MAXCHAR);
     int narg;
     char** arg;
-    int nlines;
-    int err;
     int no;
     for(int ityp=0;ityp<no_types;ityp++)
     {
@@ -484,73 +483,46 @@ void ForceField_eam::set_setfl(int no_files
         drhos[ityp]=atof(arg[1]);
         drs[ityp]=atof(arg[3]);
         
+        int tot=nrhos[ityp]+2*nrs[ityp];
         
-        CREATE1D(tmp_F[ityp],nrhos[ityp]+1);
-        CREATE1D(tmp_rho[ityp],nrs[ityp]+1);
-        CREATE1D(tmp_zi[ityp],nrs[ityp]+1);
+        CREATE1D(tmp,tot);
         
-        for(int i=0;i<5;i++)
-            delete [] arg[i];
-        delete [] arg;
-        
-        if(nrhos[ityp]%5!=0 || nrs[ityp]%5!=0)
-            
-            error->abort("nro and nrho remainder by 5 should be zero");
-        
-        nlines=nrhos[ityp]/5;
-        no=1;
-        for(int i=0;i<nlines;i++)
+        int ipos=0;
+        while (ipos<tot)
         {
-            err=line_read(fp,line);
-            if(err==-1)
+            if(line_read(fp,line)==-1)
                 error->abort("eam potential file ended immaturely");
             
-            if(sscanf(line,"%lf %lf %lf %lf %lf"
-                      ,&tmp_F[ityp][no],&tmp_F[ityp][no+1]
-                      ,&tmp_F[ityp][no+2],&tmp_F[ityp][no+3]
-                      ,&tmp_F[ityp][no+4])!=5)
-                error->abort("wrong line in eam file: %s",line);
-            no+=5;
-            
-        }
-        
-        nlines=nrs[ityp]/5;
-        no=1;
-        for(int i=0;i<nlines;i++)
-        {
-            err=line_read(fp,line);
-            if(err==-1)
-                error->abort("eam potential file ended immaturely");
-            
-            if(sscanf(line,"%lf %lf %lf %lf %lf"
-                      ,&tmp_zi[ityp][no],&tmp_zi[ityp][no+1]
-                      ,&tmp_zi[ityp][no+2],&tmp_zi[ityp][no+3]
-                      ,&tmp_zi[ityp][no+4])!=5)
-                error->abort("wrong line in eam file: %s",line);
-            no+=5;
-            
-        }
-        
-        nlines=nrs[ityp]/5;
-        no=1;
-        for(int i=0;i<nlines;i++)
-        {
-            err=line_read(fp,line);
-            if(err==-1)
-                error->abort("eam potential file ended immaturely");
-            
-            if(sscanf(line,"%lf %lf %lf %lf %lf"
-                      ,&tmp_rho[ityp][no],&tmp_rho[ityp][no+1]
-                      ,&tmp_rho[ityp][no+2],&tmp_rho[ityp][no+3]
-                      ,&tmp_rho[ityp][no+4])!=5)
-                error->abort("wrong line in eam file: %s",line);
-            no+=5;
             narg=mapp->parse_line(line,arg);
+            
+            if(ipos+narg>tot)
+                error->abort("eam potential file ended immaturely");
+            
+            for(int i=0;i<narg;i++)
+            {
+                tmp[ipos]=atof(arg[i]);
+                ipos++;
+                delete [] arg[i];
+            }
+            if(narg)
+                delete [] arg;
             
         }
         
         if(atoms->my_p_no==0)
             fclose(fp);
+        
+        CREATE1D(tmp_F[ityp],nrhos[ityp]+1);
+        CREATE1D(tmp_zi[ityp],nrs[ityp]+1);
+        CREATE1D(tmp_rho[ityp],nrs[ityp]+1);
+        
+        tmp_rho[ityp][0]=tmp_zi[ityp][0]=tmp_F[ityp][0]=0.0;
+        memcpy(&tmp_F[ityp][1],&tmp[0],nrhos[ityp]*sizeof(TYPE0));
+        memcpy(&tmp_zi[ityp][1],&tmp[nrhos[ityp]],nrs[ityp]*sizeof(TYPE0));
+        memcpy(&tmp_rho[ityp][1],&tmp[nrhos[ityp]+nrs[ityp]],nrs[ityp]*sizeof(TYPE0));
+        
+        delete [] tmp;
+        
     }
     delete [] line;
     
@@ -699,7 +671,7 @@ void ForceField_eam::set_setfl(int no_files
 /*--------------------------------------------
  read setfiles
  --------------------------------------------*/
-void ForceField_eam::set_funcfl(int no_files
+void ForceField_eam::set_setfl(int no_files
 ,char** file_names)
 {
     if(no_files!=1)
@@ -725,7 +697,6 @@ void ForceField_eam::set_funcfl(int no_files
     int narg;
     
     narg=mapp->parse_line(line,arg);
-    int no_types=atom_types->no_types;
     if(narg<2 || narg-1 < no_types)
         error->abort("wrong format in eam potential file");
     
@@ -788,8 +759,7 @@ void ForceField_eam::set_funcfl(int no_files
     dr_inv=1.0/dr;
     drho_inv=1.0/drho;
     
-    if(nrho%5!=0 || nr%5!=0)
-        error->abort("nro and nrho remainder by 5 should be zero");
+
     
     
     for(int j=0;j<narg;j++)
@@ -800,75 +770,71 @@ void ForceField_eam::set_funcfl(int no_files
     if(line_read(fp,line)==-1)
         error->abort("eam potential file ended immaturely");
     
-
-
+    
+    int ipos=0;
+    int tot=tot_no_types*(nrho+nr)+tot_no_types*(tot_no_types+1)/2*nr;
+    
+    TYPE0* tmp;
+    CREATE1D(tmp,tot);
+    while (ipos<tot)
+    {
+        if(line_read(fp,line)==-1)
+            error->abort("eam potential file ended immaturely");
+        
+        narg=mapp->parse_line(line,arg);
+        
+        if(ipos+narg>tot)
+            error->abort("eam potential file ended immaturely");
+        
+        for(int i=0;i<narg;i++)
+        {
+            tmp[ipos]=atof(arg[i]);
+            ipos++;
+            delete [] arg[i];
+        }
+        if(narg)
+            delete [] arg;
+        
+    }
+    
+    delete [] line;
+    if(atoms->my_p_no==0)
+        fclose(fp);
+    
+    
     allocate();
     
     
-    int no_lines;
     int icur_pos,jcur_pos;
-    int err;
-    int no;
     int component;
-    
-    
     icur_pos=0;
+    ipos=0;
     for(int ityp=0;ityp<tot_no_types;ityp++)
     {
         if(ityp==type_ref[icur_pos][0])
         {
-            no=0;
             component=type_ref[icur_pos][1];
-            no_lines=nrho/5;
-            for(int i=0;i<no_lines;i++)
-            {
-                err=line_read(fp,line);
-                if(err==-1)
-                    error->abort("eam potential file ended immaturely");
-                
-                if(sscanf(line,"%lf %lf %lf %lf %lf"
-                ,&F_arr[component][no][0],&F_arr[component][no+1][0]
-                ,&F_arr[component][no+2][0],&F_arr[component][no+3][0]
-                ,&F_arr[component][no+4][0])!=5)
-                    error->abort("wrong line in eam file: %s",line);
-                no+=5;
-    
-            }
             
-            no=0;
-            component=type2rho[type_ref[icur_pos][1]][0];
-            no_lines=nr/5;
-            for(int i=0;i<no_lines;i++)
-            {
-                err=line_read(fp,line);
-                if(err==-1)
-                    error->abort("eam potential file ended immaturely");
-                
-                if(sscanf(line,"%lf %lf %lf %lf %lf"
-                ,&rho_arr[component][no][0],&rho_arr[component][no+1][0]
-                ,&rho_arr[component][no+2][0],&rho_arr[component][no+3][0]
-                ,&rho_arr[component][no+4][0])!=5)
-                    error->abort("wrong line in eam file: %s",line);
-                no+=5;
-                
-            }
+            for(int i=0;i<nrho;i++)
+                F_arr[component][i][0]=tmp[ipos+i];
+            
+            ipos+=nrho;
+            
+            for(int i=0;i<nr;i++)
+                rho_arr[component][i][0]=tmp[ipos+i];
+            
+            ipos+=nr;
             
             icur_pos++;
         }
         else
         {
-            no_lines=nr/5+nrho/5;
-            for(int i=0;i<no_lines;i++)
-                if(line_read(fp,line)==-1)
-                    error->abort("eam potential file ended immaturely");
+            ipos+=nrho+nr;
         }
+        
     }
-
     
-    no_lines=nr/5;
     icur_pos=0;
-    jcur_pos=0;
-    
     for(int ityp=0;ityp<tot_no_types;ityp++)
     {
         if(ityp==type_ref[icur_pos][0])
@@ -878,32 +844,18 @@ void ForceField_eam::set_funcfl(int no_files
             {
                 if(jtyp==type_ref[jcur_pos][0])
                 {
-                    no=0;
                     component=type2phi[type_ref[icur_pos][1]][type_ref[jcur_pos][1]];
-                    no_lines=nr/5;
-                    for(int i=0;i<no_lines;i++)
-                    {
-                        err=line_read(fp,line);
-                        if(err==-1)
-                            error->abort("eam potential file ended immaturely");
-                        
-                        if(sscanf(line,"%lf %lf %lf %lf %lf"
-                        ,&phi_r_arr[component][no][0],&phi_r_arr[component][no+1][0]
-                        ,&phi_r_arr[component][no+2][0],&phi_r_arr[component][no+3][0]
-                        ,&phi_r_arr[component][no+4][0])!=5)
-                            error->abort("wrong line in eam file: %s",line);
-                        no+=5;
-                        
-                    }
+                    
+                    for(int i=0;i<nr;i++)
+                        phi_r_arr[component][i][0]=tmp[ipos+i];
+                    
+                    ipos+=nr;
                     
                     jcur_pos++;
                 }
                 else
                 {
-                    no_lines=nr/5;
-                    for(int i=0;i<no_lines;i++)
-                        if(line_read(fp,line)==-1)
-                            error->abort("eam potential file ended immaturely");
+                    ipos+=nr;
                 }
             }
             
@@ -912,23 +864,18 @@ void ForceField_eam::set_funcfl(int no_files
         }
         else
         {
-            no_lines=nr*(ityp+1)/5+nrho/5;
-            for(int i=0;i<no_lines;i++)
-                if(line_read(fp,line)==-1)
-                    error->abort("eam potential file ended immaturely");
+            ipos+=nr*(ityp+1);
         }
-
     }
-
     
-    delete [] line;
+    
+    delete [] tmp;
     
     for(int i=0;i<no_types;i++)
         delete [] type_ref[i];
     if(no_types)
         delete [] type_ref;
-    if(atoms->my_p_no==0)
-        fclose(fp);
+
 }
 /*--------------------------------------------
  read setfiles
@@ -959,7 +906,6 @@ void ForceField_eam::set_fs(int no_files
     int narg;
     
     narg=mapp->parse_line(line,arg);
-    int no_types=atom_types->no_types;
     if(narg<2 || narg-1 < no_types)
         error->abort("wrong format in eam potential file");
     
@@ -985,7 +931,8 @@ void ForceField_eam::set_fs(int no_files
     
     for(int j=0;j<narg;j++)
         delete [] arg[j];
-    delete [] arg;
+    if(narg)
+        delete [] arg;
     
     for(int i=0;i<no_types;i++)
     {
@@ -1022,13 +969,13 @@ void ForceField_eam::set_fs(int no_files
     dr_inv=1.0/dr;
     drho_inv=1.0/drho;
     
-    if(nrho%5!=0 || nr%5!=0)
-        error->abort("nro and nrho remainder by 5 should be zero");
+
     
     
     for(int j=0;j<narg;j++)
         delete [] arg[j];
-    delete [] arg;
+    if(narg)
+        delete [] arg;
     
     
     if(line_read(fp,line)==-1)
@@ -1036,72 +983,75 @@ void ForceField_eam::set_fs(int no_files
     
     
     
+    int ipos=0;
+    int tot=tot_no_types*nrho+tot_no_types*tot_no_types*nr
+    +tot_no_types*(tot_no_types+1)/2*nr;
+    TYPE0* tmp;
+    CREATE1D(tmp,tot);
+    while (ipos<tot)
+    {
+        if(line_read(fp,line)==-1)
+            error->abort("eam potential file ended immaturely");
+        
+        narg=mapp->parse_line(line,arg);
+        
+        if(ipos+narg>tot)
+            error->abort("eam potential file ended immaturely");
+        
+        for(int i=0;i<narg;i++)
+        {
+            tmp[ipos]=atof(arg[i]);
+            ipos++;
+            delete [] arg[i];
+        }
+        if(narg)
+            delete [] arg;
+        
+    }
+    
+    delete [] line;
+    if(atoms->my_p_no==0)
+        fclose(fp);
+    
     allocate();
     
     
-    int no_lines;
     int icur_pos,jcur_pos;
-    int err;
-    int no;
     int component;
     
+    
+    
+    ipos=0;
     icur_pos=0;
     for(int ityp=0;ityp<tot_no_types;ityp++)
     {
-        
-        
         if(ityp==type_ref[icur_pos][0])
         {
-            no=0;
             component=type_ref[icur_pos][1];
-            no_lines=nrho/5;
-            for(int i=0;i<no_lines;i++)
-            {
-                err=line_read(fp,line);
-                if(err==-1)
-                    error->abort("eam potential file ended immaturely");
-                
-                if(sscanf(line,"%lf %lf %lf %lf %lf"
-                ,&F_arr[component][no][0],&F_arr[component][no+1][0]
-                ,&F_arr[component][no+2][0],&F_arr[component][no+3][0]
-                ,&F_arr[component][no+4][0])!=5)
-                    error->abort("wrong line in eam file: %s",line);
-                no+=5;
-                
-            }
+            
+            for(int i=0;i<nrho;i++)
+                F_arr[component][i][0]=tmp[ipos+i];
+            
+            ipos+=nrho;
+            
             
             jcur_pos=0;
             for(int jtyp=0;jtyp<tot_no_types;jtyp++)
             {
                 if(jtyp==type_ref[jcur_pos][0])
                 {
-                    no=0;
-                    component=type2rho[type_ref[icur_pos][1]][type_ref[jcur_pos][1]];
-                    no_lines=nr/5;
-                    for(int i=0;i<no_lines;i++)
-                    {
-                        err=line_read(fp,line);
-                        if(err==-1)
-                            error->abort("eam potential file ended immaturely");
-                        
-                        if(sscanf(line,"%lf %lf %lf %lf %lf"
-                        ,&rho_arr[component][no][0],&rho_arr[component][no+1][0]
-                        ,&rho_arr[component][no+2][0],&rho_arr[component][no+3][0]
-                        ,&rho_arr[component][no+4][0])!=5)
-                            error->abort("wrong line in eam file: %s",line);
-                        no+=5;
-                        
-                    }
                     
+                    component=type2rho[type_ref[icur_pos][1]][type_ref[jcur_pos][1]];
+                    
+                    for(int i=0;i<nr;i++)
+                        rho_arr[component][i][0]=tmp[ipos+i];
+                    
+                    ipos+=nr;
                     jcur_pos++;
                 }
                 else
                 {
-                    no_lines=nr/5;
-                    for(int i=0;i<no_lines;i++)
-                        if(line_read(fp,line)==-1)
-                            error->abort("eam potential file ended immaturely");
-                    
+                    ipos+=nr;
                 }
             }
             
@@ -1109,19 +1059,12 @@ void ForceField_eam::set_fs(int no_files
         }
         else
         {
-            no_lines=nr*tot_no_types/5+nrho/5;
-            for(int i=0;i<no_lines;i++)
-                if(line_read(fp,line)==-1)
-                    error->abort("eam potential file ended immaturely");
+            ipos+=nr*tot_no_types+nrho;
         }
     }
     
     
-    
-    no_lines=nr/5;
     icur_pos=0;
-    jcur_pos=0;
-    
     for(int ityp=0;ityp<tot_no_types;ityp++)
     {
         if(ityp==type_ref[icur_pos][0])
@@ -1131,57 +1074,37 @@ void ForceField_eam::set_fs(int no_files
             {
                 if(jtyp==type_ref[jcur_pos][0])
                 {
-                    no=0;
                     component=type2phi[type_ref[icur_pos][1]][type_ref[jcur_pos][1]];
-                    no_lines=nr/5;
-                    for(int i=0;i<no_lines;i++)
-                    {
-                        err=line_read(fp,line);
-                        if(err==-1)
-                            error->abort("eam potential file ended immaturely");
-                        
-                        if(sscanf(line,"%lf %lf %lf %lf %lf"
-                        ,&phi_r_arr[component][no][0],&phi_r_arr[component][no+1][0]
-                        ,&phi_r_arr[component][no+2][0],&phi_r_arr[component][no+3][0]
-                        ,&phi_r_arr[component][no+4][0])!=5)
-                            error->abort("wrong line in eam file: %s",line);
-                        no+=5;
-                        
-                    }
+                    
+                    for(int i=0;i<nr;i++)
+                        phi_r_arr[component][i][0]=tmp[ipos+i];
+                    
+                    ipos+=nr;
                     
                     jcur_pos++;
                 }
                 else
                 {
-                    no_lines=nr/5;
-                    for(int i=0;i<no_lines;i++)
-                        if(line_read(fp,line)==-1)
-                            error->abort("eam potential file ended immaturely");
-                    
+                    ipos+=nr;
                 }
             }
+            
             
             icur_pos++;
         }
         else
         {
-            no_lines=nr*(ityp+1)/5+nrho/5;
-            for(int i=0;i<no_lines;i++)
-                if(line_read(fp,line)==-1)
-                    error->abort("eam potential file ended immaturely");
+            ipos+=nr*(ityp+1);
         }
-        
     }
     
     
-    delete [] line;
+    delete [] tmp;
     
     for(int i=0;i<no_types;i++)
         delete [] type_ref[i];
     if(no_types)
         delete [] type_ref;
-    if(atoms->my_p_no==0)
-        fclose(fp);
 }
 /*--------------------------------------------
  read line and broadcast
